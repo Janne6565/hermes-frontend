@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+
+/*
+ * Design tokens, taken from the Mail Triage UI mockup.
+ *
+ * The palette is deliberately almost monochrome. Priority is carried by *weight* and one amber
+ * accent — never by a rainbow of label colours — and red is reserved exclusively for a broken
+ * system. If something is red, mail is not being read. That rule is why `--color-broken` is the
+ * only red token and why nothing in the priority scale uses it.
+ */
+@theme {
+  /* surfaces, darkest first */
+  --color-void: #0b0b0a;
+  --color-rail: #101010;
+  --color-surface: #131312;
+  --color-raised: #171716;
+  --color-sunken: #0f0f0e;
+
+  /* borders, brightest to faintest */
+  --color-line: #2d2c29;
+  --color-line-dim: #232220;
+  --color-line-faint: #1c1b1a;
+
+  /* text, brightest to faintest */
+  --color-ink-bright: #f2efe7;
+  --color-ink-strong: #f0ede5;
+  --color-ink: #e8e5dd;
+  --color-ink-soft: #d6d2c8;
+  --color-ink-muted: #b8b3a8;
+  --color-ink-dim: #9a968c;
+  --color-ink-dimmer: #8a857b;
+  --color-ink-faint: #6b6862;
+  --color-ink-fainter: #55534e;
+  --color-ink-ghost: #4a463f;
+
+  /* the one accent */
+  --color-amber: #e0a83c;
+  --color-amber-bright: #f2c364;
+  --color-amber-line: #4a4238;
+  --color-amber-wash: #17150f;
+
+  /* status — green for healthy, amber for degraded, red ONLY for broken */
+  --color-healthy: #7ba05b;
+  --color-broken: #d9603f;
+  --color-broken-line: #4a3a34;
+  --color-broken-wash: #1a1211;
+
+  --font-mono:
+    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* The mockup is square-cornered throughout — it reads as an instrument, not an app. */
+  --radius-none: 0;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-amber);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-amber-bright);
+  }
+
+  /* Focus has to stay clearly visible on a near-black surface — the amber accent doubles as the
+     focus colour rather than the browser default, which all but disappears here. */
+  :focus-visible {
+    outline: 1px solid var(--color-amber);
+    outline-offset: 1px;
+  }
+
+  ::selection {
+    background: var(--color-amber);
+    color: var(--color-void);
+  }
+}
+
+@utility label-caps {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
