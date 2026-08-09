@@ -15,6 +15,7 @@ import type {
   Rule,
   RuleDryRun,
   RuleType,
+  SyncResult,
   TestPushResult,
 } from './types';
 
@@ -63,6 +64,17 @@ export async function fetchMessage(id: string): Promise<Message> {
 
 export async function fetchOpenHighPriority(days = 7): Promise<Message[]> {
   const { data } = await api.get<Message[]>('/api/v1/messages/high/open', { params: { days } });
+  return data;
+}
+
+/**
+ * Polls the mailbox now instead of waiting out the 180s tick.
+ *
+ * Resolves only once the sync is done, so whatever it ingested is already in the index by the time
+ * the caller reloads the list.
+ */
+export async function syncMessages(): Promise<SyncResult> {
+  const { data } = await api.post<SyncResult>('/api/v1/messages/sync');
   return data;
 }
 

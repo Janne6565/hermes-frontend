@@ -221,6 +221,19 @@ export interface TestPushResult {
   readonly sentAt: string;
 }
 
+/**
+ * The outcome of a manual sync.
+ *
+ * `failed` is separate from `ingested` because both zeroes read the same in a count but mean
+ * opposite things — nothing new, versus nothing checked because the mailbox errored.
+ */
+export interface SyncResult {
+  readonly alreadyRunning: boolean;
+  readonly accounts: number;
+  readonly ingested: number;
+  readonly failed: number;
+}
+
 /** Never carries token material — only whether an account is attached, and which one. */
 export interface GoogleAccount {
   readonly connected: boolean;

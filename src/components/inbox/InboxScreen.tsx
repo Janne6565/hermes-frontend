@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
-import { Inbox } from 'lucide-react';
+import { Inbox, RefreshCw } from 'lucide-react';
+import type { SyncResult } from '@/api/types';
 import { EmptyState, ErrorState, SectionLabel, Spinner } from '@/components/ui';
 import { useHasReaderPane } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ export function InboxScreen() {
           <span className="text-[12px] tracking-widest text-ink-dim uppercase">
             {t('nav.inbox')}
           </span>
+          <SyncNotice notice={inbox.syncNotice} />
           <div className="ml-auto flex gap-1.5 text-[11px]">
             <FilterChip
               view="high"
@@ -66,6 +68,18 @@ export function InboxScreen() {
               {t('priority.noise')} {inbox.counts?.noise ?? 0}
             </FilterChip>
           </div>
+          <button
+            type="button"
+            onClick={inbox.refresh}
+            disabled={inbox.refreshing}
+            // The poll runs every three minutes on its own; this is for the minutes in between,
+            // when you know a mail was just sent and would rather not wait out the tick.
+            title={t('inbox.refreshHint')}
+            aria-label={t('inbox.refresh')}
+            className="-mr-1 flex-none p-1 text-ink-fainter transition-colors hover:text-ink disabled:cursor-not-allowed disabled:text-ink-ghost"
+          >
+            <RefreshCw size={13} className={cn(inbox.refreshing && 'animate-spin')} aria-hidden />
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -168,6 +182,31 @@ export function InboxScreen() {
       </div>
     </div>
   );
+}
+
+/**
+ * What the last manual refresh found, for the few seconds it is still news.
+ *
+ * A refresh that changes nothing on screen is the common case — the poll usually got there first —
+ * and without a word for it the button is indistinguishable from a broken one. A mailbox that threw
+ * is the one case that gets the broken colour, because then the list is not merely unchanged, it is
+ * stale and lying.
+ */
+function SyncNotice({ notice }: { readonly notice: SyncResult | 'error' | null }) {
+  const { t } = useTranslation();
+  if (!notice) return null;
+
+  if (notice === 'error' || notice.failed > 0) {
+    return <span className="truncate text-[11px] text-broken">{t('inbox.syncFailed')}</span>;
+  }
+
+  const label = notice.alreadyRunning
+    ? t('inbox.syncRunning')
+    : notice.ingested > 0
+      ? t('inbox.syncIngested', { count: notice.ingested })
+      : t('inbox.syncNothingNew');
+
+  return <span className="truncate text-[11px] text-ink-fainter">{label}</span>;
 }
 
 /** A header chip. Clicking the active one clears the filter — the chip is its own toggle. */

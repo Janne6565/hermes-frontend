@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useDismissMessage, useMessageSearch, useSendFeedback } from '@/api/queries';
-import type { Message } from '@/api/types';
+import {
+  useDismissMessage,
+  useMessageSearch,
+  useSendFeedback,
+  useSyncMessages,
+} from '@/api/queries';
+import type { Message, SyncResult } from '@/api/types';
 import type { InboxView } from './views';
 
 /**
@@ -25,6 +30,7 @@ export function useInboxLogic() {
   const recent = useMessageSearch({ limit: INBOX_LIMIT });
   const dismiss = useDismissMessage();
   const feedback = useSendFeedback();
+  const sync = useSyncMessages();
 
   const { view } = useSearch({ from: '/' });
   const navigate = useNavigate({ from: '/' });
@@ -112,6 +118,38 @@ export function useInboxLogic() {
     }
   }, [ordered, selectedId]);
 
+  /**
+   * What the last manual refresh did, until it stops being news.
+   *
+   * The button has to answer "did anything happen?" — a list that looks identical afterwards is
+   * indistinguishable from a button that did nothing. It clears itself because it is a report on
+   * one action, not a status: leaving "nothing new" on screen would keep claiming that long after
+   * the background poll has moved on.
+   */
+  const [syncNotice, setSyncNotice] = useState<SyncResult | 'error' | null>(null);
+
+  useEffect(() => {
+    if (sync.status === 'pending' || sync.status === 'idle') {
+      // A run in progress replaces the previous report rather than sitting next to it — the
+      // spinner is the current state, and last time's count is not.
+      setSyncNotice(null);
+      return;
+    }
+    setSyncNotice(sync.status === 'error' ? 'error' : (sync.data ?? null));
+    const timer = globalThis.setTimeout(() => setSyncNotice(null), 6_000);
+    return () => globalThis.clearTimeout(timer);
+  }, [sync.status, sync.data]);
+
+  /**
+   * Refresh means "go and look at Gmail now".
+   *
+   * Refetching the query alone would only re-read Postgres — which the 60s interval already does,
+   * and which cannot contain mail the backend has not polled yet. The mutation invalidates the
+   * lists itself, so the new mail arrives without anything chained on here.
+   */
+  const syncMutate = sync.mutate;
+  const refresh = useCallback(() => syncMutate(), [syncMutate]);
+
   const setView = useCallback(
     (next: InboxView | undefined) => {
       void navigate({ search: next ? { view: next } : {} });
@@ -176,6 +214,9 @@ export function useInboxLogic() {
         case 'h':
           if (selected) markHigh(selected);
           break;
+        case 'r':
+          refresh();
+          break;
         case 'Enter':
           // Opening means Gmail — Hermes is read-only, so there is nowhere else for it to go.
           if (selected) globalThis.open(selected.gmailUrl, '_blank', 'noopener,noreferrer');
@@ -187,7 +228,7 @@ export function useInboxLogic() {
     };
     globalThis.addEventListener('keydown', onKeyDown);
     return () => globalThis.removeEventListener('keydown', onKeyDown);
-  }, [move, selected, toggleDismissed, neverNotifySender, markHigh]);
+  }, [move, selected, toggleDismissed, neverNotifySender, markHigh, refresh]);
 
   const openCount = allHigh.filter((message) => !message.dismissed).length;
 
@@ -195,6 +236,9 @@ export function useInboxLogic() {
     isLoading: recent.isLoading,
     isError: recent.isError,
     refetch: recent.refetch,
+    refresh,
+    refreshing: sync.isPending,
+    syncNotice,
     view,
     setView,
     showHigh,

@@ -24,6 +24,7 @@ import {
   sendFeedback,
   setRuleEnabled,
   startGoogleConnect,
+  syncMessages,
   type MessageSearchParams,
 } from './hermes';
 import type { CreateRuleRequest, FeedbackRequest, RuleType } from './types';
@@ -183,6 +184,28 @@ export function useDismissMessage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['messages'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.digestToday });
+    },
+  });
+}
+
+/**
+ * Polls the mailbox on demand.
+ *
+ * A mutation rather than a query: it makes the backend go and talk to Gmail, which is an action
+ * with a cost, not a read that may be repeated freely. The invalidations mirror those of a
+ * dismissal — a sync can add to any message list and to today's digest at once.
+ */
+export function useSyncMessages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: syncMessages,
+    onSuccess: (result) => {
+      // A run that never started has nothing to show; refetching would only make the list flicker
+      // for no new data.
+      if (result.alreadyRunning) return;
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.digestToday });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.health });
     },
   });
 }
