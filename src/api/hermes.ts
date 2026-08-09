@@ -87,6 +87,7 @@ export interface MessageSearchParams {
   readonly before?: string;
   readonly sender?: string;
   readonly classifiedBy?: ClassifiedBy;
+  readonly category?: string;
   readonly q?: string;
   readonly limit?: number;
 }
