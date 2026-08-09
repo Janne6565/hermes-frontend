@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { HermesLockup } from '@/components/ui/HermesMark';
 import { getAdminToken, setAdminToken } from '@/lib/session';
 
 /**
@@ -33,10 +34,7 @@ export function UnlockGate({ children }: { readonly children: ReactNode }) {
   return (
     <div className="flex h-full items-center justify-center bg-void px-6">
       <form onSubmit={onSubmit} className="flex w-full max-w-md flex-col gap-5">
-        <div className="flex items-center gap-2.5">
-          <span className="size-2.5 bg-amber" aria-hidden />
-          <span className="text-[13px] font-semibold tracking-wide">{t('app.name')}</span>
-        </div>
+        <HermesLockup name={t('app.name')} />
         <h1 className="font-sans text-2xl text-ink-bright">{t('unlock.title')}</h1>
         <p className="font-sans text-[14px] leading-relaxed text-ink-dim">{t('unlock.body')}</p>
         <label className="flex items-center gap-2 border border-line bg-sunken px-3 py-2.5 focus-within:border-amber-line">

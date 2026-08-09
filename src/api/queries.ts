@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   acknowledgeAlert,
+  assignCategory,
+  createCategory,
   createRule,
+  deleteCategory,
+  fetchCategoryOverview,
   dryRunRule,
   fetchDigestStats,
   fetchRecentFeedback,
@@ -27,7 +31,13 @@ import {
   syncMessages,
   type MessageSearchParams,
 } from './hermes';
-import type { CreateRuleRequest, FeedbackRequest, RuleType } from './types';
+import type {
+  AssignCategoryRequest,
+  CreateCategoryRequest,
+  CreateRuleRequest,
+  FeedbackRequest,
+  RuleType,
+} from './types';
 
 /** Query keys in one place so invalidation can't drift from the reads. */
 export const queryKeys = {
@@ -40,6 +50,7 @@ export const queryKeys = {
   message: (id: string) => ['messages', id] as const,
   messages: (params: MessageSearchParams) => ['messages', params] as const,
   rules: ['rules'] as const,
+  categories: (days: number | undefined) => ['categories', days ?? 'default'] as const,
   alerts: ['alerts'] as const,
   alertOverview: (days: number) => ['alerts', 'overview', days] as const,
   health: ['health'] as const,
@@ -114,6 +125,59 @@ export function useMessageSearch(params: MessageSearchParams, enabled = true) {
     queryKey: queryKeys.messages(params),
     queryFn: () => searchMessages(params),
     enabled,
+  });
+}
+
+/**
+ * The categories screen in one read.
+ *
+ * Live like the inbox: the unsure queue fills as mail arrives, and a screen the user leaves open to
+ * work through it would otherwise go stale exactly while they are using it.
+ */
+export function useCategoryOverview(days?: number) {
+  return useQuery({
+    queryKey: queryKeys.categories(days),
+    queryFn: () => fetchCategoryOverview(days),
+    refetchInterval: LIVE_REFETCH_MS,
+  });
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CreateCategoryRequest) => createCategory(request),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCategory(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['categories'] });
+      // Its messages went back to the fallback, so every list that renders a category chip is
+      // now showing a name that no longer exists.
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+}
+
+/**
+ * Answers one item in the "needs a call" queue.
+ *
+ * Invalidates the message lists as well as the overview because the correction rewrites the chip
+ * shown next to that mail in the inbox, digest and search.
+ */
+export function useAssignCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: AssignCategoryRequest) => assignCategory(request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['categories'] });
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.digestToday });
+    },
   });
 }
 
