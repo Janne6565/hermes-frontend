@@ -152,12 +152,19 @@ export function CategoriesScreen() {
             <table className="w-full table-fixed text-left">
               <thead>
                 <tr className="label-caps border-b border-line text-ink-fainter">
-                  <th className="w-44 pb-2 font-normal">{t('categories.category')}</th>
-                  <th className="w-56 pb-2 font-normal">
+                  {/* Fixed layout means a column's width is its *whole* width — content runs to
+                      the boundary unless the cell reserves the gutter itself. Without pr-* the
+                      right-aligned share count sat flush against the next column. */}
+                  <th className="w-44 pr-4 pb-2 font-normal">{t('categories.category')}</th>
+                  <th className="w-56 pr-6 pb-2 font-normal">
                     {t('categories.share', { days: String(state.windowDays) })}
                   </th>
-                  <th className="w-24 pb-2 font-normal max-md:hidden">{t('categories.typical')}</th>
-                  <th className="pb-2 font-normal max-lg:hidden">{t('categories.matchedBy')}</th>
+                  <th className="w-24 pr-4 pb-2 font-normal max-md:hidden">
+                    {t('categories.typical')}
+                  </th>
+                  <th className="pr-4 pb-2 font-normal max-lg:hidden">
+                    {t('categories.matchedBy')}
+                  </th>
                   <th className="w-20 pb-2 text-right font-normal max-md:hidden">
                     {t('categories.corrected')}
                   </th>
@@ -288,7 +295,7 @@ function CategoryRow({
 
   return (
     <tr className="border-b border-line-faint text-[12px]">
-      <td className="py-2.5">
+      <td className="pr-4 py-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
           <ColorDot color={category.color} />
           {/* The name is the way in. Inline renaming lived here before the detail dialog existed;
@@ -303,7 +310,7 @@ function CategoryRow({
           </button>
         </span>
       </td>
-      <td className="py-2.5">
+      <td className="pr-6 py-2.5">
         <span className="flex items-center gap-2.5">
           <span className="h-1.5 flex-1 bg-line-faint">
             <span
@@ -321,13 +328,13 @@ function CategoryRow({
       </td>
       <td
         className={cn(
-          'py-2.5 max-md:hidden',
+          'pr-4 py-2.5 max-md:hidden',
           category.typicalPriority === 'high' ? 'text-amber' : 'text-ink-dim',
         )}
       >
         {category.typicalPriority ?? '—'}
       </td>
-      <td className="max-w-0 py-2.5 font-sans text-[12.5px] text-ink-dimmer max-lg:hidden">
+      <td className="max-w-0 pr-4 py-2.5 font-sans text-[12.5px] text-ink-dimmer max-lg:hidden">
         {/* The full list is worth having on hover — it is the answer to "why did this land here",
             and the truncated form often cuts off exactly the pattern you were looking for. */}
         <span className="block truncate" title={matchedBy}>
