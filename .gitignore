@@ -4,3 +4,6 @@ dist/
 *.local
 .vite/
 coverage/
+
+# Local Claude Code worktrees — scratch checkouts, never part of the repo.
+.claude/worktrees/
