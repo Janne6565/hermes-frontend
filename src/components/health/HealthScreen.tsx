@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ErrorState, Notice, SectionLabel, Spinner, StatusDot } from '@/components/ui';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { useHealth } from '@/api/queries';
+import { useAlertOverview, useHealth } from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,17 @@ export function HealthScreen() {
   const { t } = useTranslation();
   const { locale } = useLanguage();
   const { data, isLoading, isError, refetch } = useHealth();
+  const overview = useAlertOverview();
+
+  // Both halves of the window, newest first: the intake table is about whether the webhook is
+  // being called at all, so a resolved alert is just as much evidence as a firing one.
+  const intake = useMemo(
+    () =>
+      [...(overview.data?.unresolved ?? []), ...(overview.data?.resolved ?? [])].sort((a, b) =>
+        b.receivedAt.localeCompare(a.receivedAt),
+      ),
+    [overview.data],
+  );
 
   if (isLoading) return <Spinner label={t('common.loading')} />;
   if (isError || !data) {
@@ -86,6 +98,78 @@ export function HealthScreen() {
           <Notice label={t('digest.degraded')}>
             {t('health.unclassified', { count: data.fallbackCount })}
           </Notice>
+        )}
+
+        {intake.length > 0 && (
+          <section className="flex flex-col gap-2.5">
+            <SectionLabel>{t('health.alertIntake')}</SectionLabel>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="label-caps border-b border-line text-ink-fainter">
+                  <th className="w-16 pb-2 font-normal">{t('health.time')}</th>
+                  <th className="w-20 pb-2 font-normal">{t('health.source')}</th>
+                  <th className="w-24 pb-2 font-normal">{t('health.severity')}</th>
+                  <th className="pb-2 font-normal">{t('health.alertTitle')}</th>
+                  <th className="w-24 pb-2 font-normal max-md:hidden">{t('health.notified')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {intake.map((alert) => (
+                  <tr key={alert.id} className="border-b border-line-faint text-[12px]">
+                    <td className="py-2 text-ink-fainter">
+                      {formatTime(alert.receivedAt, locale)}
+                    </td>
+                    <td className="py-2 text-ink-dimmer">{alert.source}</td>
+                    <td
+                      className={cn(
+                        'py-2',
+                        alert.severity === 'critical' || alert.severity === 'error'
+                          ? 'text-broken'
+                          : alert.severity === 'warning'
+                            ? 'text-amber'
+                            : 'text-ink-faint',
+                      )}
+                    >
+                      {alert.severity}
+                    </td>
+                    <td className="min-w-0 truncate py-2 text-ink-soft">{alert.title}</td>
+                    <td className="py-2 text-ink-faint max-md:hidden">
+                      {alert.notified
+                        ? t('health.pushed', { time: formatTime(alert.receivedAt, locale) })
+                        : t('health.heldForDigest')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {data.credentials.length > 0 && (
+          <section className="flex max-w-xl flex-col gap-2.5">
+            <SectionLabel>{t('health.credentials')}</SectionLabel>
+            {/* Presence and validity only — this panel never sees a credential value. `unknown`
+                is rendered as its own state rather than collapsed into "bad": a probe that could
+                not run is not the same as a credential that is missing. */}
+            {data.credentials.map((credential) => (
+              <div
+                key={credential.name}
+                className="flex items-center justify-between gap-4 border-b border-line-faint py-1.5 text-[12px] last:border-b-0"
+              >
+                <span className="text-ink-dim">{credential.name}</span>
+                <span
+                  className={cn(
+                    credential.state === 'ok' && 'text-healthy',
+                    credential.state === 'warn' && 'text-amber',
+                    credential.state === 'bad' && 'text-broken',
+                    credential.state === 'unknown' && 'text-ink-fainter',
+                  )}
+                >
+                  {credential.detail}
+                </span>
+              </div>
+            ))}
+          </section>
         )}
 
         <section className="flex max-w-xl flex-col gap-2.5">

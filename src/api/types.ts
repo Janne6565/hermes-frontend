@@ -30,6 +30,8 @@ export interface Message {
   readonly notifiedAt?: string;
   readonly dismissed: boolean;
   readonly gmailUrl: string;
+  /** Short origin label from the server, or absent. Currently only `infra`. */
+  readonly tag?: string;
 }
 
 export interface Rule {
@@ -52,6 +54,31 @@ export interface AlertEvent {
   readonly receivedAt: string;
   readonly resolvedAt?: string;
   readonly notified: boolean;
+  readonly acknowledgedAt?: string;
+  readonly snoozedUntil?: string;
+  /** Absent when no base URL is configured — no link beats a broken one. */
+  readonly sourceUrl?: string;
+}
+
+export interface AlertRouting {
+  readonly pushed: number;
+  readonly held: number;
+  readonly resolved: number;
+}
+
+export interface AlertSourceState {
+  readonly source: AlertSource;
+  readonly eventsInWindow: number;
+  readonly lastEventAt?: string;
+  readonly everReceived: boolean;
+}
+
+/** The whole alerts screen in one read, so its numbers cannot contradict its lists. */
+export interface AlertOverview {
+  readonly unresolved: readonly AlertEvent[];
+  readonly resolved: readonly AlertEvent[];
+  readonly routing: AlertRouting;
+  readonly sources: readonly AlertSourceState[];
 }
 
 export interface DigestCounts {
@@ -83,6 +110,29 @@ export interface Digest {
   readonly sentAt?: string;
 }
 
+export interface DigestStatsDay {
+  readonly date: string;
+  readonly high: number;
+  readonly normal: number;
+  readonly noise: number;
+  /** Messages that actually reached the phone — not the same as the high count. */
+  readonly interruptions: number;
+  readonly hasStoredDigest: boolean;
+}
+
+export interface DigestStats {
+  readonly days: readonly DigestStatsDay[];
+}
+
+/** What a candidate rule would have done to the mail already on record. */
+export interface RuleDryRun {
+  readonly supported: boolean;
+  readonly reason?: string;
+  readonly sampleSize: number;
+  readonly matched: number;
+  readonly matchedHigh: number;
+}
+
 export interface HealthServiceState {
   readonly name: string;
   readonly state: ServiceState;
@@ -96,6 +146,15 @@ export interface ClassificationMix {
   readonly fallback: number;
 }
 
+export type CredentialStatus = 'ok' | 'warn' | 'bad' | 'unknown';
+
+/** Presence and validity only — a credential value never crosses this boundary. */
+export interface CredentialState {
+  readonly name: string;
+  readonly state: CredentialStatus;
+  readonly detail: string;
+}
+
 export interface Health {
   readonly status: HealthStatus;
   readonly services: readonly HealthServiceState[];
@@ -104,6 +163,62 @@ export interface Health {
   readonly syncError?: string;
   readonly fallbackCount: number;
   readonly classificationMix: ClassificationMix;
+  readonly credentials: readonly CredentialState[];
+  readonly shadow: ShadowState;
+}
+
+/**
+ * Shadow-mode progress.
+ *
+ * No countdown: shadow mode is a ConfigMap boolean with no end date, so the screen reports the
+ * evidence gathered rather than inventing a deadline.
+ */
+export interface ShadowState {
+  readonly enabled: boolean;
+  readonly classified: number;
+  readonly high: number;
+  readonly corrections: number;
+}
+
+/**
+ * The effective server configuration.
+ *
+ * Read-only on purpose: these are ConfigMap values, so the screen mirrors them rather than
+ * pretending to own them.
+ */
+export interface Config {
+  readonly timezone: string;
+  readonly shadowMode: boolean;
+  readonly digest: {
+    readonly sendTime: string;
+    readonly includeNoise: boolean;
+    readonly skipWhenEmpty: boolean;
+  };
+  readonly quietHours: {
+    readonly enabled: boolean;
+    readonly start: string;
+    readonly end: string;
+    readonly allowSecurityAlerts: boolean;
+  };
+  readonly ntfy: {
+    readonly topic: string;
+    readonly highPriority: string;
+    readonly tokenConfigured: boolean;
+  };
+  readonly data: {
+    readonly gmailScope: string;
+    readonly snippetLength: number;
+    readonly retentionDays: number;
+    readonly pollIntervalSeconds: number;
+    readonly classifierEnabled: boolean;
+  };
+}
+
+export interface TestPushResult {
+  readonly delivered: boolean;
+  readonly topic: string;
+  readonly durationMs: number;
+  readonly sentAt: string;
 }
 
 /** Never carries token material — only whether an account is attached, and which one. */

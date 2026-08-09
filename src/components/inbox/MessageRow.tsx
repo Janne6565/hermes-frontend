@@ -25,45 +25,39 @@ export function HighMessageRow({
   const { t } = useTranslation();
   const { locale } = useLanguage();
   const cleared = message.dismissed;
-  const isAlert = message.reason?.toLowerCase().includes('alert') ?? false;
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    // The dismiss control is a real <button>, so it cannot live inside the row's own button —
+    // nested buttons are invalid HTML and the previous role="button" span was a workaround that
+    // reimplemented keyboard handling by hand. The row is a container; the two controls are
+    // siblings, with the select button stretched over the row via an ::after overlay.
+    <div
       className={cn(
-        'flex w-full flex-col gap-1 border-b border-line-faint border-l-2 px-4.5 py-3 text-left transition-colors',
+        'relative flex flex-col gap-1 border-b border-line-faint border-l-2 px-4.5 py-3 transition-colors',
         cleared ? 'border-l-line' : 'border-l-amber',
         selected ? 'bg-[#1b1a18]' : 'hover:bg-[#171614]',
       )}
     >
       <div className="flex items-baseline gap-2.5">
-        <span
+        <button
+          type="button"
+          onClick={onSelect}
           className={cn(
-            'truncate text-[12.5px] font-semibold',
+            'truncate text-left text-[12.5px] font-semibold after:absolute after:inset-0 after:content-[""]',
             cleared ? 'text-ink-faint' : 'text-ink-strong',
           )}
         >
           {message.senderName}
-        </span>
-        {isAlert && !cleared && (
-          <span className="label-caps flex-none bg-amber px-1.5 py-0.5 text-void">infra</span>
+        </button>
+        {message.tag && !cleared && (
+          <span className="label-caps flex-none bg-amber px-1.5 py-0.5 text-void">
+            {message.tag}
+          </span>
         )}
-        <span className="ml-auto flex flex-none items-center gap-2">
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleDismissed();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.stopPropagation();
-                event.preventDefault();
-                onToggleDismissed();
-              }
-            }}
+        <span className="relative z-10 ml-auto flex flex-none items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleDismissed}
             className={cn(
               'border px-1.5 py-0.5 text-[10px]',
               cleared
@@ -72,15 +66,13 @@ export function HighMessageRow({
             )}
           >
             {cleared ? t('inbox.undo') : t('inbox.dismiss').toLowerCase()}
-          </span>
+          </button>
           <span className="text-[11px] text-ink-fainter">
             {formatTime(message.receivedAt, locale)}
           </span>
         </span>
       </div>
-      <div
-        className={cn('truncate text-[12.5px]', cleared ? 'text-ink-fainter' : 'text-ink-soft')}
-      >
+      <div className={cn('truncate text-[12.5px]', cleared ? 'text-ink-fainter' : 'text-ink-soft')}>
         {message.subject}
       </div>
       {message.reason && (
@@ -93,7 +85,7 @@ export function HighMessageRow({
           {message.reason}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 

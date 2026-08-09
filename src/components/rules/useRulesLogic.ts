@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react';
-import { useCreateRule, useDeleteRule, useRules, useSetRuleEnabled } from '@/api/queries';
+import { useDeferredValue, useMemo, useState } from 'react';
+import {
+  useCreateRule,
+  useDeleteRule,
+  useRecentFeedback,
+  useRuleDryRun,
+  useRules,
+  useSetRuleEnabled,
+} from '@/api/queries';
 import type { Priority, RuleType } from '@/api/types';
 
 export function useRulesLogic() {
@@ -12,6 +19,12 @@ export function useRulesLogic() {
   const [type, setType] = useState<RuleType>('sender');
   const [pattern, setPattern] = useState('');
   const [priority, setPriority] = useState<Priority>('noise');
+
+  // Deferred so the dry run follows the pattern without firing on every keystroke; the query
+  // itself is also cached per (type, pattern), so backtracking a character is free.
+  const deferredPattern = useDeferredValue(pattern);
+  const dryRun = useRuleDryRun(type, deferredPattern.trim());
+  const feedback = useRecentFeedback();
 
   const all = useMemo(() => rules.data ?? [], [rules.data]);
   const visible = useMemo(
@@ -34,10 +47,7 @@ export function useRulesLogic() {
 
   const submit = () => {
     if (!canSubmit) return;
-    create.mutate(
-      { type, pattern: pattern.trim(), priority },
-      { onSuccess: () => setPattern('') },
-    );
+    create.mutate({ type, pattern: pattern.trim(), priority }, { onSuccess: () => setPattern('') });
   };
 
   return {
@@ -53,6 +63,9 @@ export function useRulesLogic() {
     canSubmit,
     submit,
     creating: create.isPending,
+    dryRun: dryRun.data,
+    dryRunPending: dryRun.isFetching,
+    recentFeedback: feedback.data ?? [],
     // 409 is the duplicate-pattern case; anything else is a generic failure.
     duplicate:
       (create.error as { response?: { status?: number } } | null)?.response?.status === 409,

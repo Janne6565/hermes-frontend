@@ -1,14 +1,9 @@
-import { useDeferredValue, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SearchX, Search } from 'lucide-react';
+import { Search, SearchX, X } from 'lucide-react';
 import { EmptyState, PriorityBadge, Spinner } from '@/components/ui';
-import { useMessageSearch } from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
-import type { Priority } from '@/api/types';
-
-const PRIORITIES: readonly Priority[] = ['high', 'normal', 'noise'];
+import { useSearchLogic } from './useSearchLogic';
 
 /**
  * Screen 06.
@@ -19,19 +14,7 @@ const PRIORITIES: readonly Priority[] = ['high', 'normal', 'noise'];
 export function SearchScreen() {
   const { t } = useTranslation();
   const { locale } = useLanguage();
-
-  const [query, setQuery] = useState('');
-  const [priority, setPriority] = useState<Priority | undefined>();
-
-  // Deferred so typing stays responsive without a hand-rolled debounce timer.
-  const deferredQuery = useDeferredValue(query);
-  const params = useMemo(
-    () => ({ q: deferredQuery.trim() || undefined, priority, limit: 50 }),
-    [deferredQuery, priority],
-  );
-
-  const hasCriteria = Boolean(params.q || params.priority);
-  const { data, isFetching } = useMessageSearch(params, hasCriteria);
+  const search = useSearchLogic();
 
   return (
     <div className="flex h-full flex-col">
@@ -40,60 +23,73 @@ export function SearchScreen() {
           <label className="flex items-center gap-3 border border-amber-line bg-sunken px-4 py-3.5 focus-within:border-amber">
             <Search size={15} className="text-amber" aria-hidden />
             <input
+              ref={search.inputRef}
+              // The box is the entire purpose of this route.
+              // biome-ignore lint/a11y/noAutofocus: having to tab to it would be the surprise
               autoFocus
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              value={search.query}
+              onChange={(event) => search.setQuery(event.target.value)}
               placeholder={t('search.placeholder')}
               className="w-full bg-transparent text-[15px] text-ink-strong outline-none placeholder:text-ink-ghost"
             />
           </label>
 
           <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
-            {PRIORITIES.map((option) => (
+            {/* Chips are the parsed query made visible. Removing one edits the text box, so the
+                box and the chips can never disagree about what is being searched. */}
+            {search.tokens.map((token) => (
               <button
-                key={option}
+                key={`${token.key}:${token.value}`}
                 type="button"
-                onClick={() => setPriority(priority === option ? undefined : option)}
-                className={cn(
-                  'border px-2.5 py-1',
-                  priority === option
-                    ? 'border-amber-line text-amber'
-                    : 'border-line text-ink-faint hover:text-ink-dim',
-                )}
+                onClick={() => search.removeToken(token)}
+                className="inline-flex items-center gap-1.5 border border-amber-line px-2.5 py-1 text-amber hover:bg-amber-wash"
               >
-                priority:{option}
+                {token.key}:{token.value}
+                <X size={10} aria-hidden />
               </button>
             ))}
-            {hasCriteria && (
+
+            {search.unknown.map((token) => (
+              <span
+                key={token}
+                title={t('search.unknownToken')}
+                className="border border-line px-2.5 py-1 text-ink-fainter line-through"
+              >
+                {token}
+              </span>
+            ))}
+
+            {search.hasCriteria && (
               <button
                 type="button"
-                onClick={() => {
-                  setQuery('');
-                  setPriority(undefined);
-                }}
+                onClick={search.clear}
                 className="text-ink-fainter hover:text-ink-dim"
               >
                 {t('search.clear')}
               </button>
             )}
-            {data && (
+
+            {search.results && !search.isFetching && (
               <span className="ml-auto text-ink-fainter">
-                {t('search.results', { count: data.length })}
+                {t('search.results', { count: search.results.length })}
+                {search.elapsedMs !== undefined && ` · ${search.elapsedMs} ms`}
               </span>
             )}
           </div>
 
           <div className="flex flex-col pb-10">
-            {isFetching && <Spinner label={t('common.loading')} />}
-            {!isFetching && hasCriteria && data?.length === 0 && (
+            {search.isFetching && <Spinner label={t('common.loading')} />}
+
+            {!search.isFetching && search.hasCriteria && search.results?.length === 0 && (
               <EmptyState
                 title={t('search.empty')}
                 hint={t('search.emptyHint')}
                 icon={<SearchX size={22} aria-hidden />}
               />
             )}
-            {!isFetching &&
-              data?.map((message) => (
+
+            {!search.isFetching &&
+              search.results?.map((message) => (
                 <a
                   key={message.id}
                   href={message.gmailUrl}
@@ -122,8 +118,9 @@ export function SearchScreen() {
         </div>
       </div>
 
-      <div className="flex flex-none gap-6 border-t border-line-dim px-6 py-3.5 text-[11px] text-ink-ghost">
+      <div className="flex flex-none flex-wrap gap-6 border-t border-line-dim px-6 py-3.5 text-[11px] text-ink-ghost">
         <span>{t('search.localNote')}</span>
+        <span className="ml-auto">{t('search.shortcuts')}</span>
       </div>
     </div>
   );

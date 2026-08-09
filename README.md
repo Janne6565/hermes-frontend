@@ -13,16 +13,26 @@ scale uses it.
 
 | Route | |
 |---|---|
-| `/` | Inbox + reader — high items with reasons, normal as one-liners, noise as a count |
+| `/` | Inbox + reader — high items with reasons, normal as one-liners, noise as a count. `?view=` filters to one tier |
+| `/message/$id` | One message full-screen — where the single-column layout drills into |
 | `/digest` | The day, grouped by priority, with the delivery and degradation panel |
 | `/alerts` | Grafana / SigNoz alerts, grouped by the app that paged |
 | `/rules` | The rule table and the new-rule form |
 | `/health` | Per-service state and the classification mix |
-| `/search` | Local-index search — works while sync is down |
-| `/settings` | Google account, and a read-only mirror of the server config |
+| `/search` | Local-index search with `key:value` filters — works while sync is down |
+| `/settings` | Google account, a test push, and a read-only mirror of the server config |
 | `/onboarding` | First run, driven by real state rather than a stored wizard step |
 
-Everything collapses to a single column with a bottom tab bar under `md`.
+Everything collapses to a single column with a bottom tab bar under `md`. Below that breakpoint
+there is no reader pane, so selecting a message navigates to `/message/$id` rather than selecting
+something with nowhere to show it.
+
+## Search syntax
+
+`from:`, `priority:`, `after:`, `before:` and `classified_by:` parse into real API filters and
+appear as removable chips; anything else is free text. A token with a *known* key and an invalid
+value is struck through rather than silently dropped — the query you typed and the query that ran
+are always the same query. `⌘K` focuses the box from anywhere, `esc` clears it.
 
 ## Connecting a mailbox
 
@@ -51,6 +61,9 @@ like the other house apps is the better long-term answer.
   sets match at runtime too.
 - **Buttons gate on completeness.** Disabled while a required field is empty; format errors are
   surfaced on submit, never as a silently dead button.
+- **Biome** is the linter and formatter (`bun run lint`, `bun run lint:fix`). It replaced
+  ESLint + Prettier, which had drifted into an unusable state — ESLint 9 wants a flat
+  `eslint.config.js` the repo never had, so `bun run lint` had been failing outright.
 - **Icons are `lucide-react`**, never text glyphs — except where the mockup's terminal aesthetic
   is the point (the `·` separators, the square logo mark).
 

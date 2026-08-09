@@ -17,6 +17,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RulesRouteImport } from './routes/rules'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MessageIdRouteImport } from './routes/message.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MessageIdRoute = MessageIdRouteImport.update({
+  id: '/message/$id',
+  path: '/message/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/rules': typeof RulesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/message/$id': typeof MessageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/rules': typeof RulesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/message/$id': typeof MessageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/rules': typeof RulesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/message/$id': typeof MessageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/search'
     | '/settings'
+    | '/message/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/search'
     | '/settings'
+    | '/message/$id'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/search'
     | '/settings'
+    | '/message/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   RulesRoute: typeof RulesRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
+  MessageIdRoute: typeof MessageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/message/$id': {
+      id: '/message/$id'
+      path: '/message/$id'
+      fullPath: '/message/$id'
+      preLoaderRoute: typeof MessageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   RulesRoute: RulesRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
+  MessageIdRoute: MessageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

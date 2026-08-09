@@ -53,9 +53,7 @@ export function Panel({
   readonly children: ReactNode;
   readonly className?: string;
 }) {
-  return (
-    <div className={cn('border border-line bg-surface', className)}>{children}</div>
-  );
+  return <div className={cn('border border-line bg-surface', className)}>{children}</div>;
 }
 
 /** The all-caps, wide-tracked section label used throughout the mockup. */
@@ -69,13 +67,7 @@ export function SectionLabel({
   readonly className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        'label-caps',
-        accent ? 'text-amber' : 'text-ink-faint',
-        className,
-      )}
-    >
+    <div className={cn('label-caps', accent ? 'text-amber' : 'text-ink-faint', className)}>
       {children}
     </div>
   );

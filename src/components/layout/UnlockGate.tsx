@@ -43,6 +43,8 @@ export function UnlockGate({ children }: { readonly children: ReactNode }) {
           <KeyRound size={14} className="text-ink-faint" aria-hidden />
           <input
             type="password"
+            // A full-screen blocking gate whose only control is this field.
+            // biome-ignore lint/a11y/noAutofocus: focusing it is where a reader should already be
             autoFocus
             value={value}
             onChange={(event) => setValue(event.target.value)}

@@ -16,11 +16,11 @@ export function OnboardingScreen() {
   const account = useGoogleAccount();
   const health = useHealth();
 
+  const shadow = health.data?.shadow;
   const gmailDone = account.data?.connected ?? false;
   const classifierDone =
     health.data?.services.find((service) => service.name === 'claude sidecar')?.state === 'ok';
-  const ntfyDone =
-    health.data?.services.find((service) => service.name === 'ntfy')?.state === 'ok';
+  const ntfyDone = health.data?.services.find((service) => service.name === 'ntfy')?.state === 'ok';
 
   const steps = [
     { title: t('onboarding.gmailConnected'), done: gmailDone },
@@ -70,16 +70,19 @@ export function OnboardingScreen() {
           ))}
         </div>
 
-        {gmailDone && (
+        {gmailDone && shadow && (
           <div className="flex flex-wrap items-center gap-5 border border-amber-line bg-amber-wash px-5 py-5">
             <div className="flex flex-col gap-1">
-              <span className="text-2xl font-semibold text-amber">
-                {completed}/{steps.length}
-              </span>
-              <span className="label-caps text-ink-dimmer">{t('onboarding.shadowRemaining')}</span>
+              <span className="text-2xl font-semibold text-amber">{shadow.classified}</span>
+              <span className="label-caps text-ink-dimmer">{t('onboarding.classified')}</span>
             </div>
             <p className="flex-1 font-sans text-[13px] leading-relaxed text-ink-muted">
-              {t('onboarding.shadowBody')}
+              {/* The corrections count is the one that decides readiness: labels you never had to
+                  correct are the evidence that the classifier can be trusted to interrupt you. */}
+              {t('onboarding.shadowStats', {
+                high: String(shadow.high),
+                corrections: String(shadow.corrections),
+              })}
             </p>
             {/* Going live is a ConfigMap change (HERMES_SHADOW_MODE), not a button — flipping the
                 one switch that lets the service interrupt you should be a reviewed commit. */}

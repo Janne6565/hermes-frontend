@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { StatusDot } from '@/components/ui';
 import { useNavRailLogic } from './useNavRailLogic';
+import type { InboxSearch } from '@/routes/index';
 
 /**
  * The left rail from screen 01, and the bottom tab bar on mobile.
@@ -12,7 +13,8 @@ import { useNavRailLogic } from './useNavRailLogic';
  */
 export function NavRail() {
   const { t } = useTranslation();
-  const { counts, health, lastSync, historyId, alertCount, ruleCount } = useNavRailLogic();
+  const { counts, openHigh, dismissed, health, lastSync, historyId, alertCount, ruleCount } =
+    useNavRailLogic();
 
   return (
     <nav className="flex w-52 flex-none flex-col border-r border-line bg-rail py-5 max-md:hidden">
@@ -23,17 +25,38 @@ export function NavRail() {
 
       <div className="label-caps px-4.5 pb-2 text-ink-fainter">{t('nav.mail')}</div>
       <div className="flex flex-col">
-        <RailLink to="/" label={t('nav.inbox')} value={counts.total} exact />
+        <RailLink to="/" label={t('nav.inbox')} value={counts.total} exact search={{}} />
         <RailLink
           to="/"
           label={t('nav.highOpen')}
-          value={counts.high}
+          value={openHigh}
           accent
           indent
-          search={{ priority: 'high' as const }}
+          search={{ view: 'high' }}
         />
-        <RailLink to="/" label={t('nav.normal')} value={counts.normal} indent />
-        <RailLink to="/" label={t('nav.noise')} value={counts.noise} indent dim />
+        <RailLink
+          to="/"
+          label={t('nav.dismissed')}
+          value={dismissed}
+          indent
+          dim
+          search={{ view: 'dismissed' }}
+        />
+        <RailLink
+          to="/"
+          label={t('nav.normal')}
+          value={counts.normal}
+          indent
+          search={{ view: 'normal' }}
+        />
+        <RailLink
+          to="/"
+          label={t('nav.noise')}
+          value={counts.noise}
+          indent
+          dim
+          search={{ view: 'noise' }}
+        />
         <RailLink to="/digest" label={t('nav.digest')} indent />
         <RailLink to="/search" label={t('nav.search')} indent />
       </div>
@@ -69,15 +92,17 @@ interface RailLinkProps {
   readonly dim?: boolean;
   readonly exact?: boolean;
   readonly dot?: 'ok' | 'warn' | 'bad';
-  readonly search?: Record<string, string>;
+  readonly search?: InboxSearch;
 }
 
-function RailLink({ to, label, value, accent, indent, dim, exact, dot, search }: RailLinkProps) {
+function RailLink({ to, label, value, accent, indent, dim, dot, search }: RailLinkProps) {
   return (
     <Link
       to={to}
       search={search}
-      activeOptions={{ exact }}
+      // Exact so the five inbox rows, which share a pathname and differ only by `view`, highlight
+      // one at a time instead of all matching the unfiltered row.
+      activeOptions={{ exact: true, includeSearch: true }}
       className={cn(
         'flex items-center justify-between px-4.5 py-2 text-[13px] transition-colors',
         indent && 'pl-5',

@@ -45,7 +45,11 @@ export function Reader({
           gmail_id {message.gmailId}
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button variant={message.dismissed ? 'ghost' : 'primary'} onClick={onDismiss} loading={busy}>
+          <Button
+            variant={message.dismissed ? 'ghost' : 'primary'}
+            onClick={onDismiss}
+            loading={busy}
+          >
             <Check size={12} aria-hidden />
             {message.dismissed ? t('inbox.undo') : t('inbox.dismiss')}
           </Button>
@@ -89,7 +93,8 @@ export function Reader({
           <div className="flex flex-wrap items-center gap-3">
             <PriorityBadge priority={message.priority} />
             <span className="text-[11px] text-ink-dimmer">
-              {t('inbox.classifiedBy')} <span className="text-ink-soft">{message.classifiedBy}</span>
+              {t('inbox.classifiedBy')}{' '}
+              <span className="text-ink-soft">{message.classifiedBy}</span>
             </span>
             <span className="ml-auto text-[11px] text-ink-fainter">
               {message.notifiedAt
@@ -97,9 +102,7 @@ export function Reader({
                 : t('inbox.notPushed')}
             </span>
           </div>
-          {message.reason && (
-            <div className="font-sans text-[14px] text-ink">{message.reason}</div>
-          )}
+          {message.reason && <div className="font-sans text-[14px] text-ink">{message.reason}</div>}
           {message.summary && (
             <div className="font-sans text-[13px] text-ink-dim">
               {t('inbox.summary')}: {message.summary}

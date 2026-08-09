@@ -190,8 +190,53 @@ export function RulesScreen() {
             {state.creating ? t('rules.creating') : t('rules.create')}
           </Button>
 
-          {state.duplicate && (
-            <p className="text-[11.5px] text-broken">{t('rules.duplicate')}</p>
+          {state.duplicate && <p className="text-[11.5px] text-broken">{t('rules.duplicate')}</p>}
+
+          {state.dryRun && (
+            <div className="flex flex-col gap-2 border-t border-line-dim pt-4">
+              <SectionLabel>{t('rules.dryRun')}</SectionLabel>
+              {state.dryRun.supported ? (
+                <p className="font-sans text-[12.5px] leading-relaxed text-ink-dim">
+                  {/* The high count is the number that matters: a noise rule that would have
+                      swallowed something high is the mistake this panel exists to prevent. */}
+                  {t('rules.dryRunResult', {
+                    matched: String(state.dryRun.matched),
+                    sample: String(state.dryRun.sampleSize),
+                  })}{' '}
+                  <span
+                    className={cn(
+                      state.dryRun.matchedHigh > 0 && state.form.priority !== 'high'
+                        ? 'text-amber'
+                        : 'text-ink-faint',
+                    )}
+                  >
+                    {state.dryRun.matchedHigh > 0
+                      ? t('rules.dryRunHigh', { count: state.dryRun.matchedHigh })
+                      : t('rules.dryRunNoHigh')}
+                  </span>
+                </p>
+              ) : (
+                <p className="font-sans text-[12.5px] leading-relaxed text-ink-faint">
+                  {t('rules.dryRunUnsupported')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {state.recentFeedback.length > 0 && (
+            <div className="mt-auto flex flex-col gap-2 border-t border-line-dim pt-4">
+              <SectionLabel>{t('rules.recentFeedback')}</SectionLabel>
+              <ul className="flex flex-col gap-1.5 text-[11.5px] text-ink-dimmer">
+                {state.recentFeedback.map((rule) => (
+                  <li key={rule.id} className="flex flex-col">
+                    <span className="truncate text-ink-muted">
+                      {rule.type} {rule.pattern}
+                    </span>
+                    <span className="text-ink-ghost">→ {rule.priority}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </aside>
       </div>

@@ -1,12 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  acknowledgeAlert,
   createRule,
+  dryRunRule,
+  fetchDigestStats,
+  fetchRecentFeedback,
   deleteRule,
+  fetchAlertOverview,
+  snoozeAlert,
+  fetchConfig,
+  sendTestPush,
   disconnectGoogle,
   dismissMessage,
   fetchDigest,
   fetchGoogleAccount,
   fetchHealth,
+  fetchMessage,
   fetchOpenHighPriority,
   fetchRules,
   fetchTodayDigest,
@@ -17,17 +26,23 @@ import {
   startGoogleConnect,
   type MessageSearchParams,
 } from './hermes';
-import type { CreateRuleRequest, FeedbackRequest } from './types';
+import type { CreateRuleRequest, FeedbackRequest, RuleType } from './types';
 
 /** Query keys in one place so invalidation can't drift from the reads. */
 export const queryKeys = {
   digestToday: ['digest', 'today'] as const,
   digest: (date: string) => ['digest', date] as const,
+  digestStats: (days: number) => ['digest', 'stats', days] as const,
+  recentFeedback: ['rules', 'feedback'] as const,
+  ruleDryRun: (type: string, pattern: string) => ['rules', 'dry-run', type, pattern] as const,
   openHigh: ['messages', 'high', 'open'] as const,
+  message: (id: string) => ['messages', id] as const,
   messages: (params: MessageSearchParams) => ['messages', params] as const,
   rules: ['rules'] as const,
   alerts: ['alerts'] as const,
+  alertOverview: (days: number) => ['alerts', 'overview', days] as const,
   health: ['health'] as const,
+  config: ['config'] as const,
   googleAccount: ['auth', 'google'] as const,
 };
 
@@ -46,12 +61,45 @@ export function useDigest(date: string) {
   return useQuery({ queryKey: queryKeys.digest(date), queryFn: () => fetchDigest(date) });
 }
 
+export function useDigestStats(days = 7) {
+  return useQuery({
+    queryKey: queryKeys.digestStats(days),
+    queryFn: () => fetchDigestStats(days),
+  });
+}
+
+export function useRecentFeedback(limit = 5) {
+  return useQuery({
+    queryKey: queryKeys.recentFeedback,
+    queryFn: () => fetchRecentFeedback(limit),
+  });
+}
+
+/**
+ * The retrospective effect of a candidate rule.
+ *
+ * Only runs once there is a pattern to evaluate, and is kept fresh briefly so typing a pattern
+ * character by character does not re-query the whole sample on every keystroke.
+ */
+export function useRuleDryRun(type: RuleType, pattern: string) {
+  return useQuery({
+    queryKey: queryKeys.ruleDryRun(type, pattern),
+    queryFn: () => dryRunRule(type, pattern),
+    enabled: pattern.trim().length > 0,
+    staleTime: 30_000,
+  });
+}
+
 export function useOpenHighPriority() {
   return useQuery({
     queryKey: queryKeys.openHigh,
     queryFn: () => fetchOpenHighPriority(),
     refetchInterval: LIVE_REFETCH_MS,
   });
+}
+
+export function useMessage(id: string) {
+  return useQuery({ queryKey: queryKeys.message(id), queryFn: () => fetchMessage(id) });
 }
 
 export function useMessageSearch(params: MessageSearchParams, enabled = true) {
@@ -74,12 +122,51 @@ export function useAlerts() {
   });
 }
 
+export function useAlertOverview(days = 1) {
+  return useQuery({
+    queryKey: queryKeys.alertOverview(days),
+    queryFn: () => fetchAlertOverview(days),
+    refetchInterval: LIVE_REFETCH_MS,
+  });
+}
+
+export function useAcknowledgeAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => acknowledgeAlert(id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+  });
+}
+
+export function useSnoozeAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, hours }: { id: string; hours?: number }) => snoozeAlert(id, hours),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+  });
+}
+
 export function useHealth() {
   return useQuery({
     queryKey: queryKeys.health,
     queryFn: fetchHealth,
     refetchInterval: LIVE_REFETCH_MS,
   });
+}
+
+/**
+ * The server's effective configuration.
+ *
+ * No refetch interval: this only changes when the ConfigMap does, which means a pod restart, which
+ * means a fresh page anyway.
+ */
+export function useConfig() {
+  return useQuery({ queryKey: queryKeys.config, queryFn: fetchConfig, staleTime: Infinity });
+}
+
+/** Not a query — sending a test push is an action with a side effect on the user's phone. */
+export function useSendTestPush() {
+  return useMutation({ mutationFn: sendTestPush });
 }
 
 export function useGoogleAccount() {
@@ -91,8 +178,10 @@ export function useDismissMessage() {
   return useMutation({
     mutationFn: ({ id, dismissed }: { id: string; dismissed: boolean }) =>
       dismissMessage(id, dismissed),
+    // The `messages` prefix covers the open-high list, the search results and the single-message
+    // route at once — a dismissal changes all three and they must not disagree.
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.openHigh });
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.digestToday });
     },
   });
@@ -128,7 +217,7 @@ export function useSendFeedback() {
     mutationFn: (request: FeedbackRequest) => sendFeedback(request),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.rules });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.openHigh });
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.digestToday });
     },
   });

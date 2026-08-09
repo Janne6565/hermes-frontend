@@ -1,14 +1,27 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { Inbox } from 'lucide-react';
 import { EmptyState, ErrorState, SectionLabel, Spinner } from '@/components/ui';
+import { useHasReaderPane } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/utils';
 import { HighMessageRow, NormalMessageRow } from './MessageRow';
 import { Reader } from './Reader';
 import { useInboxLogic } from './useInboxLogic';
+import type { InboxView } from './views';
 
 /** Screen 01 — the list on the left, the reader on the right. */
 export function InboxScreen() {
   const { t } = useTranslation();
   const inbox = useInboxLogic();
+  const hasReaderPane = useHasReaderPane();
+  const navigate = useNavigate();
+
+  // With no reader pane on screen there is nowhere for a selection to show, so a tap has to open
+  // the message on its own route instead of silently selecting an invisible thing.
+  const open = (id: string) => {
+    inbox.setSelectedId(id);
+    if (!hasReaderPane) void navigate({ to: '/message/$id', params: { id } });
+  };
 
   if (inbox.isLoading) {
     return <Spinner label={t('common.loading')} />;
@@ -33,20 +46,30 @@ export function InboxScreen() {
             {t('nav.inbox')}
           </span>
           <div className="ml-auto flex gap-1.5 text-[11px]">
-            <span className="border border-amber-line px-2 py-1 text-amber">
+            <FilterChip
+              view="high"
+              active={inbox.view === 'high'}
+              onSelect={inbox.setView}
+              tone="accent"
+            >
               {t('priority.high')} {inbox.counts?.high ?? 0}
-            </span>
-            <span className="border border-line px-2 py-1 text-ink-dim">
+            </FilterChip>
+            <FilterChip view="normal" active={inbox.view === 'normal'} onSelect={inbox.setView}>
               {t('priority.normal')} {inbox.counts?.normal ?? 0}
-            </span>
-            <span className="border border-line-dim px-2 py-1 text-ink-fainter">
+            </FilterChip>
+            <FilterChip
+              view="noise"
+              active={inbox.view === 'noise'}
+              onSelect={inbox.setView}
+              tone="dim"
+            >
               {t('priority.noise')} {inbox.counts?.noise ?? 0}
-            </span>
+            </FilterChip>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {isEmpty ? (
+          {isEmpty && !inbox.showNoise ? (
             <EmptyState
               title={t('inbox.empty')}
               hint={t('inbox.emptyHint')}
@@ -54,7 +77,7 @@ export function InboxScreen() {
             />
           ) : (
             <>
-              {inbox.high.length > 0 && (
+              {inbox.showHigh && inbox.high.length > 0 && (
                 <>
                   <SectionLabel accent className="px-4.5 pt-3.5 pb-1.5">
                     {t('inbox.highSection', {
@@ -66,15 +89,15 @@ export function InboxScreen() {
                     <HighMessageRow
                       key={message.id}
                       message={message}
-                      selected={message.id === inbox.selectedId}
-                      onSelect={() => inbox.setSelectedId(message.id)}
+                      selected={hasReaderPane && message.id === inbox.selectedId}
+                      onSelect={() => open(message.id)}
                       onToggleDismissed={() => inbox.toggleDismissed(message)}
                     />
                   ))}
                 </>
               )}
 
-              {inbox.normal.length > 0 && (
+              {inbox.showNormal && inbox.normal.length > 0 && (
                 <>
                   <SectionLabel className="px-4.5 pt-4.5 pb-1.5">
                     {t('inbox.normalSection', { count: inbox.normal.length })}
@@ -83,14 +106,14 @@ export function InboxScreen() {
                     <NormalMessageRow
                       key={message.id}
                       message={message}
-                      selected={message.id === inbox.selectedId}
-                      onSelect={() => inbox.setSelectedId(message.id)}
+                      selected={hasReaderPane && message.id === inbox.selectedId}
+                      onSelect={() => open(message.id)}
                     />
                   ))}
                 </>
               )}
 
-              {(inbox.noise?.count ?? 0) > 0 && (
+              {inbox.showNoise && (inbox.noise?.count ?? 0) > 0 && (
                 <div className="flex flex-col gap-2 px-5 py-4">
                   <button
                     type="button"
@@ -117,6 +140,10 @@ export function InboxScreen() {
                   )}
                 </div>
               )}
+
+              {isEmpty && inbox.showNoise && (
+                <EmptyState title={t('inbox.onlyNoise')} hint={t('inbox.onlyNoiseHint')} />
+              )}
             </>
           )}
         </div>
@@ -132,5 +159,39 @@ export function InboxScreen() {
         />
       </div>
     </div>
+  );
+}
+
+/** A header chip. Clicking the active one clears the filter — the chip is its own toggle. */
+function FilterChip({
+  view,
+  active,
+  tone,
+  onSelect,
+  children,
+}: {
+  readonly view: InboxView;
+  readonly active: boolean;
+  readonly tone?: 'accent' | 'dim';
+  readonly onSelect: (next: InboxView | undefined) => void;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(active ? undefined : view)}
+      className={cn(
+        'border px-2 py-1 transition-colors',
+        active
+          ? 'border-amber-line text-amber'
+          : tone === 'accent'
+            ? 'border-line text-ink-dim hover:border-amber-line hover:text-amber'
+            : tone === 'dim'
+              ? 'border-line-dim text-ink-fainter hover:text-ink-dim'
+              : 'border-line text-ink-dim hover:text-ink',
+      )}
+    >
+      {children}
+    </button>
   );
 }

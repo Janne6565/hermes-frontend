@@ -1,10 +1,10 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
-@import '@fontsource/ibm-plex-sans/400.css';
-@import '@fontsource/ibm-plex-sans/500.css';
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
 
 /*
  * Design tokens, taken from the Mail Triage UI mockup.
@@ -51,9 +51,8 @@
   --color-broken-line: #4a3a34;
   --color-broken-wash: #1a1211;
 
-  --font-mono:
-    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 
   /* The mockup is square-cornered throughout — it reads as an instrument, not an app. */
   --radius-none: 0;
