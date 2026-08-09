@@ -42,6 +42,7 @@ export function CategoriesScreen() {
               <Button
                 variant="ghost"
                 loading={state.backfilling}
+                disabled={state.backfilling}
                 onClick={state.backfill}
                 title={t('categories.backfillHint')}
               >
@@ -67,19 +68,26 @@ export function CategoriesScreen() {
             </Notice>
           )}
 
-          {state.backfillResult && (
+          {state.backfilling && (
+            <Notice label={t('categories.backfillRunningLabel')}>
+              {state.backfillProgress
+                ? t('categories.backfillProgress', {
+                    done: String(state.backfillProgress.done),
+                    total: String(state.backfillProgress.total),
+                  })
+                : t('categories.backfillStarting')}
+            </Notice>
+          )}
+
+          {!state.backfilling && state.backfillOutcome === 'sidecar_unavailable' && (
+            <Notice label={t('categories.backfillStalledLabel')} tone="broken">
+              {t('categories.backfillStalled', { count: state.uncategorised })}
+            </Notice>
+          )}
+
+          {!state.backfilling && state.backfillOutcome === 'more_remaining' && (
             <Notice label={t('categories.backfillDoneLabel')}>
-              {t('categories.backfillDone', {
-                rule: String(state.backfillResult.categorisedByRule),
-                model: String(state.backfillResult.categorisedByModel),
-              })}{' '}
-              {state.backfillResult.remaining > 0 &&
-                t(
-                  state.backfillResult.stoppedBecause === 'sidecar_unavailable'
-                    ? 'categories.backfillStalled'
-                    : 'categories.backfillMore',
-                  { count: state.backfillResult.remaining },
-                )}
+              {t('categories.backfillMore', { count: state.uncategorised })}
             </Notice>
           )}
 

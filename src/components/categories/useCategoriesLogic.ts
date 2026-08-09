@@ -37,6 +37,7 @@ export function useCategoriesLogic() {
   const [color, setColor] = useState<string>(CATEGORY_COLORS[4]);
 
   const categories = useMemo(() => overview.data?.categories ?? [], [overview.data]);
+  const status = overview.data?.backfill;
   const mix = overview.data?.mix;
   const total =
     mix === undefined
@@ -82,12 +83,16 @@ export function useCategoriesLogic() {
     remove: (id: string) => remove.mutate(id),
     assigningId: assign.isPending ? assign.variables?.messageId : undefined,
     assignTo: (messageId: string, categoryId: string) => assign.mutate({ messageId, categoryId }),
-    // Offered only when there is something to fix. A button that always says "backfill" invites a
-    // pointless run that still costs a round trip and reads as a no-op.
-    uncategorised: categories.find((category) => category.fallback)?.count ?? 0,
+    // From the server's own count of unresolved rows, not the fallback category's windowed count:
+    // the backfill acts on everything, so a button driven by a 7-day slice would hide work that
+    // pressing it would still do.
+    uncategorised: status?.uncategorised ?? 0,
     backfill: () => backfill.mutate(undefined),
-    backfilling: backfill.isPending,
-    backfillResult: backfill.data,
+    // `isPending` only covers the few milliseconds of the start call. What the user cares about is
+    // whether the *run* is going, which only the server knows.
+    backfilling: (status?.running ?? false) || backfill.isPending,
+    backfillProgress: status?.target ? { done: status.processed, total: status.target } : undefined,
+    backfillOutcome: status?.running ? undefined : status?.lastOutcome,
     backfillFailed: backfill.isError,
   };
 }

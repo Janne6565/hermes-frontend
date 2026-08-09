@@ -3,8 +3,8 @@ import type {
   AlertEvent,
   AlertOverview,
   AssignCategoryRequest,
+  BackfillStatus,
   Category,
-  CategoryBackfill,
   CategoryOverview,
   ClassifiedBy,
   Config,
@@ -45,8 +45,8 @@ export async function deleteCategory(id: string): Promise<void> {
   await api.delete(`/api/v1/categories/${id}`);
 }
 
-export async function backfillCategories(limit?: number): Promise<CategoryBackfill> {
-  const { data } = await api.post<CategoryBackfill>('/api/v1/categories/backfill', undefined, {
+export async function backfillCategories(limit?: number): Promise<BackfillStatus> {
+  const { data } = await api.post<BackfillStatus>('/api/v1/categories/backfill', undefined, {
     params: { limit },
   });
   return data;
