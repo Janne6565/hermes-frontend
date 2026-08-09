@@ -62,7 +62,7 @@ export function CategoriesScreen() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-        <div className="flex min-w-0 flex-1 flex-col gap-4 px-6 py-6 lg:overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-x-auto px-6 py-6 lg:overflow-y-auto">
           {state.backfillFailed && (
             <Notice label={t('categories.backfillFailedLabel')} tone="broken">
               {t('categories.backfillFailed')}
@@ -144,7 +144,12 @@ export function CategoriesScreen() {
               icon={<Tags size={22} aria-hidden />}
             />
           ) : (
-            <table className="w-full text-left">
+            // `table-fixed` is load-bearing, not cosmetic. With the default auto layout a cell
+            // sizes to its content, so one category matching four long Amazon addresses widened
+            // the whole table past its column and pushed the grid sideways under the nav rail —
+            // and `truncate` cannot bite without a constrained width. The header widths below
+            // become the actual widths only under `table-fixed`.
+            <table className="w-full table-fixed text-left">
               <thead>
                 <tr className="label-caps border-b border-line text-ink-fainter">
                   <th className="w-44 pb-2 font-normal">{t('categories.category')}</th>
@@ -277,6 +282,9 @@ function CategoryRow({
     setEditing(true);
   };
 
+  const matchedBy =
+    category.matchedBy.length > 0 ? category.matchedBy.join(', ') : t('categories.modelOnly');
+
   const commit = () => {
     const name = draft.trim();
     // Nothing to send is not an error — closing an edit you did not make should just close it.
@@ -349,8 +357,12 @@ function CategoryRow({
       >
         {category.typicalPriority ?? '—'}
       </td>
-      <td className="min-w-0 truncate py-2.5 font-sans text-[12.5px] text-ink-dimmer max-lg:hidden">
-        {category.matchedBy.length > 0 ? category.matchedBy.join(', ') : t('categories.modelOnly')}
+      <td className="max-w-0 py-2.5 font-sans text-[12.5px] text-ink-dimmer max-lg:hidden">
+        {/* The full list is worth having on hover — it is the answer to "why did this land here",
+            and the truncated form often cuts off exactly the pattern you were looking for. */}
+        <span className="block truncate" title={matchedBy}>
+          {matchedBy}
+        </span>
       </td>
       <td className="py-2.5 text-right text-[11.5px] text-ink-faint max-md:hidden">
         {category.corrected > 0 ? category.corrected : '—'}
@@ -499,7 +511,9 @@ function CorrectionLine({
       <span className="truncate text-ink-muted">{correction.subject}</span>
       <span className="text-ink-ghost">
         → {correction.category ?? '—'}
-        {correction.previousCategory
+        {/* Confirming the classifier's guess is still a correction — it writes the rule — but
+            rendering it as "Newsletters (was Newsletters)" reads as a bug in the trail. */}
+        {correction.previousCategory && correction.previousCategory !== correction.category
           ? ` ${t('categories.wasCategory', { category: correction.previousCategory })}`
           : ''}
       </span>
