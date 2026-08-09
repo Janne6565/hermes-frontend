@@ -1,9 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { getAdminToken, clearAdminToken } from '@/lib/session';
 
 /**
  * Shared axios instance. Also the mutator Orval injects into the generated client, so auth and
  * error handling are configured exactly once.
+ *
+ * There is no token to attach. Authentik's forward-auth middleware stops the browser at the
+ * ingress, so anything that reaches this code already has a session — see the app's README.
  */
 export const api = axios.create({
   // Relative: the ingress serves the API and the app from the same host, and the dev server
@@ -12,21 +14,13 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
-  const token = getAdminToken();
-  if (token) {
-    config.headers.set('X-Hermes-Token', token);
-  }
-  return config;
-});
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // A 401 means the stored token is wrong or was rotated. Drop it so the app falls back to the
-    // unlock screen instead of looping on failed requests.
+    // A 401 means the Authentik session expired while the tab sat open. Nothing in the app can
+    // recover from that — a full reload hits the ingress, which redirects to SSO and back.
     if (error?.response?.status === 401) {
-      clearAdminToken();
+      globalThis.location?.reload();
     }
     return Promise.reject(error);
   },

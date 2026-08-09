@@ -36,7 +36,7 @@ export function HermesMark({
   );
 }
 
-/** The mark plus the wordmark, as it appears at the top of the rail and on the unlock gate. */
+/** The mark plus the wordmark, as it appears at the top of the rail. */
 export function HermesLockup({
   name,
   size = 18,

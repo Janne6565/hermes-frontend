@@ -321,13 +321,6 @@ const enCommon = {
     shadowStats:
       '{{high}} marked high · you corrected {{corrections}} of them. Shadow mode stays on until HERMES_SHADOW_MODE is turned off in the ConfigMap.',
   },
-  unlock: {
-    title: 'Enter your access token',
-    body: 'Hermes reads your mail, so the API is not public. Paste the admin token from the hermes-app-key secret.',
-    placeholder: 'admin token',
-    submit: 'Unlock',
-    invalid: 'That token was rejected.',
-  },
   common: {
     loading: 'Loading…',
     failed: 'Could not load.',
@@ -671,13 +664,6 @@ const deCommon: CommonSchema = {
     classified: 'Bisher klassifiziert',
     shadowStats:
       '{{high}} als hoch eingestuft · davon hast du {{corrections}} korrigiert. Der Schattenmodus bleibt an, bis HERMES_SHADOW_MODE in der ConfigMap abgeschaltet wird.',
-  },
-  unlock: {
-    title: 'Zugangstoken eingeben',
-    body: 'Hermes liest deine Mail, deshalb ist die API nicht öffentlich. Füge den Admin-Token aus dem hermes-app-key-Secret ein.',
-    placeholder: 'Admin-Token',
-    submit: 'Entsperren',
-    invalid: 'Dieser Token wurde abgelehnt.',
   },
   common: {
     loading: 'Wird geladen…',

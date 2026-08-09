@@ -10,8 +10,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // A 401 means the admin token is wrong; retrying just burns requests until the unlock
-      // screen appears anyway.
+      // A 401 means the Authentik session lapsed. Retrying burns requests against a gate that
+      // will not open; the interceptor reloads instead, which lands on the SSO redirect.
       retry: (failureCount, error) => {
         const status = (error as { response?: { status?: number } })?.response?.status;
         return status !== 401 && failureCount < 2;
