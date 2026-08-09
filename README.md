@@ -50,6 +50,12 @@ There is no login screen, and the app holds no credential at all. Hermes reads y
 an unauthenticated browser is redirected to `sso.jannekeipert.de` and never reaches this bundle.
 Membership in the `hermes-users` group is the gate.
 
+**Signing out** is `/settings` -> *Sign out*, with a shortcut at the foot of the rail. There is no
+session in this bundle to clear — Authentik's outpost holds it — so the button is a plain
+navigation to `/outpost.goauthentik.io/sign_out`, never an axios call: the response is a redirect
+chain across two origins, and an XHR would follow it invisibly and leave the tab on a page it is
+no longer allowed to see.
+
 A 401 therefore only means the session lapsed while the tab sat open — the axios interceptor
 reloads the page, which hits the ingress and comes back through SSO.
 

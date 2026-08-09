@@ -5,6 +5,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useConfig, useSendTestPush } from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatTime } from '@/lib/format';
+import { signOut } from '@/lib/auth';
 import { GoogleAccountPanel } from './GoogleAccountPanel';
 import type { AppLanguage } from '@/i18n/resources';
 import { cn } from '@/lib/utils';
@@ -156,6 +157,16 @@ export function SettingsScreen() {
             </div>
           </>
         )}
+
+        <section className="flex max-w-xl flex-col gap-3">
+          <SectionLabel accent>{t('settings.session')}</SectionLabel>
+          <p className="font-sans text-[12.5px] leading-relaxed text-ink-dim">
+            {t('settings.signOutNote')}
+          </p>
+          <Button variant="outline" className="self-start" onClick={signOut}>
+            {t('settings.signOut')}
+          </Button>
+        </section>
 
         <section className="flex max-w-xl flex-col gap-3">
           <SectionLabel accent>{t('settings.language')}</SectionLabel>
