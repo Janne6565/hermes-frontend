@@ -217,6 +217,7 @@ export function CategoriesScreen() {
               <UnsureCard
                 key={message.messageId}
                 message={message}
+                categories={state.categories}
                 busy={state.assigningId === message.messageId}
                 onAssign={(categoryId) => state.assignTo(message.messageId, categoryId)}
               />
@@ -320,14 +321,26 @@ function CategoryRow({
 
 function UnsureCard({
   message,
+  categories,
   busy,
   onAssign,
 }: {
   readonly message: UnsureMessage;
+  readonly categories: readonly Category[];
   readonly busy: boolean;
   readonly onAssign: (categoryId: string) => void;
 }) {
+  const { t } = useTranslation();
   const { locale } = useLanguage();
+
+  // Everything the two chips do not already offer. The fallback is excluded: "this is
+  // Uncategorised" is not an answer to "which category is this", it is the state being escaped.
+  const others = categories.filter(
+    (category) =>
+      !category.fallback &&
+      category.id !== message.guess?.id &&
+      category.id !== message.alternative?.id,
+  );
 
   return (
     <div className="flex flex-col gap-2.5 border border-line bg-raised px-3.5 py-3">
@@ -354,6 +367,30 @@ function UnsureCard({
             onClick={() => onAssign(message.alternative?.id ?? '')}
           />
         )}
+
+        {others.length > 0 && (
+          <label className="flex items-center">
+            <span className="sr-only">{t('categories.chooseOther')}</span>
+            {/* A native select rather than a custom popover: it is one tap on a phone, keyboard
+                navigable for free, and never renders off the edge of this narrow column. */}
+            <select
+              disabled={busy}
+              value=""
+              onChange={(event) => {
+                if (event.target.value) onAssign(event.target.value);
+              }}
+              className="border border-line bg-transparent px-2 py-1 text-[11px] text-ink-dim outline-none hover:text-ink focus:border-amber-line disabled:opacity-50"
+            >
+              <option value="">{t('categories.other')}</option>
+              {others.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <span className="ml-auto text-[10.5px] text-ink-ghost">
           {formatDate(message.receivedAt, locale)}
         </span>
@@ -362,7 +399,7 @@ function UnsureCard({
   );
 }
 
-/** The guessed category is offered first; picking either one is a single tap, not a dropdown. */
+/** The two the classifier named are single taps; everything else lives behind the select. */
 function ChoiceChip({
   label,
   primary = false,
