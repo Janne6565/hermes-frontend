@@ -4,6 +4,7 @@ import type {
   AlertOverview,
   AssignCategoryRequest,
   Category,
+  CategoryBackfill,
   CategoryOverview,
   ClassifiedBy,
   Config,
@@ -42,6 +43,13 @@ export async function createCategory(request: CreateCategoryRequest): Promise<Ca
 
 export async function deleteCategory(id: string): Promise<void> {
   await api.delete(`/api/v1/categories/${id}`);
+}
+
+export async function backfillCategories(limit?: number): Promise<CategoryBackfill> {
+  const { data } = await api.post<CategoryBackfill>('/api/v1/categories/backfill', undefined, {
+    params: { limit },
+  });
+  return data;
 }
 
 export async function assignCategory(request: AssignCategoryRequest): Promise<Category> {

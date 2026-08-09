@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   acknowledgeAlert,
   assignCategory,
+  backfillCategories,
   createCategory,
   createRule,
   deleteCategory,
@@ -158,6 +159,24 @@ export function useDeleteCategory() {
       void queryClient.invalidateQueries({ queryKey: ['categories'] });
       // Its messages went back to the fallback, so every list that renders a category chip is
       // now showing a name that no longer exists.
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+}
+
+/**
+ * Categorises mail that predates the feature.
+ *
+ * No optimistic update and no retry: the run costs credit per message, so a retried mutation would
+ * quietly spend twice. The result is reported back to the user verbatim instead.
+ */
+export function useBackfillCategories() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (limit?: number) => backfillCategories(limit),
+    retry: false,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['categories'] });
       void queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
   });
