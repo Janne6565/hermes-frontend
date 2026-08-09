@@ -14,6 +14,22 @@ import type { Message } from '@/api/types';
  * There is no message body here, and there cannot be. The backend stores a 500-character
  * plaintext snippet and nothing else — no HTML is ever fetched, stored or rendered.
  */
+/**
+ * A button label that disappears below `2xl`, leaving the icon.
+ *
+ * The reader pane is what is left after the rail and the list, so it is far narrower than the
+ * viewport — four labelled actions only fit on a wide screen. The label stays in the DOM for
+ * assistive tech; each control also carries a `title` for the icon-only state.
+ */
+function ActionLabel({ children }: { readonly children: React.ReactNode }) {
+  return (
+    <>
+      <span className="hidden 2xl:inline">{children}</span>
+      <span className="sr-only 2xl:hidden">{children}</span>
+    </>
+  );
+}
+
 export function Reader({
   message,
   onDismiss,
@@ -40,36 +56,43 @@ export function Reader({
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex h-13 flex-none items-center gap-2.5 border-b border-line-dim px-5">
-        <span className="hidden text-[11px] tracking-wider text-ink-fainter lg:inline">
+      {/* Fixed height and no wrapping: the actions used to wrap onto a second row inside a 52px
+          header, which overflowed it. Labels collapse to their icons when the pane is too narrow
+          to hold them, so the row shrinks instead of spilling. */}
+      <div className="flex h-13 flex-none items-center gap-2.5 overflow-hidden border-b border-line-dim px-5">
+        <span className="hidden min-w-0 truncate text-[11px] tracking-wider text-ink-fainter lg:inline">
           gmail_id {message.gmailId}
         </span>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-none items-center gap-1.5">
           <Button
             variant={message.dismissed ? 'ghost' : 'primary'}
             onClick={onDismiss}
             loading={busy}
+            title={message.dismissed ? t('inbox.undoAction') : t('inbox.dismiss')}
           >
             <Check size={12} aria-hidden />
-            {message.dismissed ? t('inbox.undo') : t('inbox.dismiss')}
+            <ActionLabel>
+              {message.dismissed ? t('inbox.undoAction') : t('inbox.dismiss')}
+            </ActionLabel>
           </Button>
           <a
             href={message.gmailUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 border border-amber-line px-3 py-1.5 text-[11.5px] text-amber hover:bg-amber-wash"
+            title={t('inbox.openInGmail')}
+            className="inline-flex flex-none items-center gap-2 border border-amber-line px-3 py-1.5 text-[11.5px] text-amber hover:bg-amber-wash"
           >
-            {t('inbox.openInGmail')}
+            <ActionLabel>{t('inbox.openInGmail')}</ActionLabel>
             <ExternalLink size={12} aria-hidden />
           </a>
-          <Button onClick={onNeverNotify} loading={busy}>
+          <Button onClick={onNeverNotify} loading={busy} title={t('inbox.neverNotify')}>
             <BellOff size={12} aria-hidden />
-            {t('inbox.neverNotify')}
+            <ActionLabel>{t('inbox.neverNotify')}</ActionLabel>
           </Button>
           {message.priority === 'high' && (
-            <Button onClick={onMarkNormal} loading={busy}>
+            <Button onClick={onMarkNormal} loading={busy} title={t('inbox.downgrade')}>
               <ArrowDown size={12} aria-hidden />
-              {t('inbox.downgrade')}
+              <ActionLabel>{t('inbox.downgrade')}</ActionLabel>
             </Button>
           )}
         </div>

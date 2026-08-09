@@ -53,9 +53,10 @@ export function useInboxLogic() {
   );
 
   /**
-   * Noise stays a count, never a list — but the count is only trustworthy if you can see what it
-   * was made of. Grouping by sender domain is a fact about the data rather than a guess at a
-   * category, and it is what makes "23 noise" auditable in one glance.
+   * The domain breakdown behind the count.
+   *
+   * Grouping by sender domain is a fact about the data rather than a guess at a category, and it
+   * is what makes "23 noise" auditable in one glance.
    */
   const noise = useMemo(() => {
     const byDomain = new Map<string, number>();
@@ -86,8 +87,16 @@ export function useInboxLogic() {
 
   const normal = useMemo(() => (showNormal ? allNormal : []), [allNormal, showNormal]);
 
-  /** Navigation order for j/k — high first, then normal, matching what is on screen. */
-  const ordered = useMemo(() => [...high, ...normal], [high, normal]);
+  // Noise is counted rather than listed in the default inbox — that is the whole point of the
+  // tier. But navigating to the noise view is an explicit request to see it, and answering that
+  // with a count and a refusal would be the app withholding data the user just asked for.
+  const noiseMessages = useMemo(() => (view === 'noise' ? allNoise : []), [allNoise, view]);
+
+  /** Navigation order for j/k — matches what is on screen, top to bottom. */
+  const ordered = useMemo(
+    () => [...high, ...normal, ...noiseMessages],
+    [high, normal, noiseMessages],
+  );
 
   const selected = useMemo(
     () => ordered.find((message) => message.id === selectedId) ?? null,
@@ -193,6 +202,7 @@ export function useInboxLogic() {
     showNoise,
     high,
     normal,
+    noiseMessages,
     noise,
     counts,
     openCount,

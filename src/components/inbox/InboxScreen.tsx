@@ -69,83 +69,91 @@ export function InboxScreen() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {isEmpty && !inbox.showNoise ? (
-            <EmptyState
-              title={t('inbox.empty')}
-              hint={t('inbox.emptyHint')}
-              icon={<Inbox size={22} aria-hidden />}
-            />
-          ) : (
-            <>
-              {inbox.showHigh && inbox.high.length > 0 && (
-                <>
-                  <SectionLabel accent className="px-4.5 pt-3.5 pb-1.5">
-                    {t('inbox.highSection', {
-                      open: String(inbox.openCount),
-                      dismissed: String(inbox.dismissedCount),
-                    })}
-                  </SectionLabel>
-                  {inbox.high.map((message) => (
-                    <HighMessageRow
-                      key={message.id}
-                      message={message}
-                      selected={hasReaderPane && message.id === inbox.selectedId}
-                      onSelect={() => open(message.id)}
-                      onToggleDismissed={() => inbox.toggleDismissed(message)}
-                    />
-                  ))}
-                </>
-              )}
+          <>
+            {inbox.showHigh && inbox.high.length > 0 && (
+              <>
+                <SectionLabel accent className="px-4.5 pt-3.5 pb-1.5">
+                  {t('inbox.highSection', {
+                    open: String(inbox.openCount),
+                    dismissed: String(inbox.dismissedCount),
+                  })}
+                </SectionLabel>
+                {inbox.high.map((message) => (
+                  <HighMessageRow
+                    key={message.id}
+                    message={message}
+                    selected={hasReaderPane && message.id === inbox.selectedId}
+                    onSelect={() => open(message.id)}
+                    onToggleDismissed={() => inbox.toggleDismissed(message)}
+                  />
+                ))}
+              </>
+            )}
 
-              {inbox.showNormal && inbox.normal.length > 0 && (
-                <>
-                  <SectionLabel className="px-4.5 pt-4.5 pb-1.5">
-                    {t('inbox.normalSection', { count: inbox.normal.length })}
-                  </SectionLabel>
-                  {inbox.normal.map((message) => (
-                    <NormalMessageRow
-                      key={message.id}
-                      message={message}
-                      selected={hasReaderPane && message.id === inbox.selectedId}
-                      onSelect={() => open(message.id)}
-                    />
-                  ))}
-                </>
-              )}
+            {inbox.showNormal && inbox.normal.length > 0 && (
+              <>
+                <SectionLabel className="px-4.5 pt-4.5 pb-1.5">
+                  {t('inbox.normalSection', { count: inbox.normal.length })}
+                </SectionLabel>
+                {inbox.normal.map((message) => (
+                  <NormalMessageRow
+                    key={message.id}
+                    message={message}
+                    selected={hasReaderPane && message.id === inbox.selectedId}
+                    onSelect={() => open(message.id)}
+                  />
+                ))}
+              </>
+            )}
 
-              {inbox.showNoise && (inbox.noise?.count ?? 0) > 0 && (
-                <div className="flex flex-col gap-2 px-5 py-4">
-                  <button
-                    type="button"
-                    onClick={inbox.toggleNoise}
-                    className="flex items-center gap-2.5 text-[11.5px] text-ink-fainter hover:text-ink-dim"
-                  >
-                    <span className="tracking-widest uppercase">
-                      {t('inbox.noiseSection', { count: inbox.noise?.count ?? 0 })}
-                    </span>
-                    <span className="h-px flex-1 bg-line-faint" />
-                    <span>{inbox.noiseExpanded ? t('inbox.collapse') : t('inbox.expand')}</span>
-                  </button>
-                  {inbox.noiseExpanded && (
-                    // Noise is counted, never listed. The breakdown is what makes the count
-                    // auditable — "23 noise" is only trustworthy if you can see what it was.
-                    <ul className="flex flex-col gap-1 pl-1 text-[11.5px] text-ink-ghost">
-                      {inbox.noise?.categories.map((category) => (
-                        <li key={category.label} className="flex justify-between">
-                          <span>{category.label}</span>
-                          <span>{category.count}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
+            {inbox.showNoise && (inbox.noise?.count ?? 0) > 0 && (
+              <div className="flex flex-col gap-2 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={inbox.toggleNoise}
+                  className="flex items-center gap-2.5 text-[11.5px] text-ink-fainter hover:text-ink-dim"
+                >
+                  <span className="tracking-widest uppercase">
+                    {t('inbox.noiseSection', { count: inbox.noise?.count ?? 0 })}
+                  </span>
+                  <span className="h-px flex-1 bg-line-faint" />
+                  <span>{inbox.noiseExpanded ? t('inbox.collapse') : t('inbox.expand')}</span>
+                </button>
+                {inbox.noiseExpanded && (
+                  // The domain breakdown is what makes the count auditable — "23 noise" is only
+                  // trustworthy if you can see it was 18 newsletters and not 18 lost invoices.
+                  <ul className="flex flex-col gap-1 pl-1 text-[11.5px] text-ink-ghost">
+                    {inbox.noise?.categories.map((category) => (
+                      <li key={category.label} className="flex justify-between">
+                        <span>{category.label}</span>
+                        <span>{category.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
-              {isEmpty && inbox.showNoise && (
-                <EmptyState title={t('inbox.onlyNoise')} hint={t('inbox.onlyNoiseHint')} />
-              )}
-            </>
-          )}
+            {/* The noise view lists the messages themselves. Elsewhere noise stays a count, so
+                  it cannot crowd out the mail that mattered — but this route *is* the request to
+                  see it, and answering that with a count alone would be withholding. */}
+            {inbox.noiseMessages.map((message) => (
+              <NormalMessageRow
+                key={message.id}
+                message={message}
+                selected={hasReaderPane && message.id === inbox.selectedId}
+                onSelect={() => open(message.id)}
+              />
+            ))}
+
+            {isEmpty && (inbox.noise?.count ?? 0) === 0 && (
+              <EmptyState
+                title={t('inbox.empty')}
+                hint={t('inbox.emptyHint')}
+                icon={<Inbox size={22} aria-hidden />}
+              />
+            )}
+          </>
         </div>
       </section>
 
