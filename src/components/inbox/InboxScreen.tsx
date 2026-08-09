@@ -89,7 +89,7 @@ export function InboxScreen() {
         {/* Only when there is a choice to make. One category is not a filter, it is a label, and a
             row of chips that all say the same thing is noise in a screen about removing noise. */}
         {inbox.categories.length > 1 && (
-          <div className="flex flex-none gap-1.5 overflow-x-auto border-b border-line-faint px-4.5 py-2">
+          <div className="scrollbar-slim flex flex-none gap-1.5 overflow-x-auto border-b border-line-faint px-4.5 py-2">
             {inbox.categories.map((category) => (
               <button
                 key={category.name}
