@@ -165,7 +165,7 @@ export function CategoriesScreen() {
                   <th className="pr-4 pb-2 font-normal max-lg:hidden">
                     {t('categories.matchedBy')}
                   </th>
-                  <th className="w-20 pb-2 text-right font-normal max-md:hidden">
+                  <th className="w-20 pr-4 pb-2 text-right font-normal max-md:hidden">
                     {t('categories.corrected')}
                   </th>
                   <th className="w-10 pb-2" />
@@ -341,10 +341,12 @@ function CategoryRow({
           {matchedBy}
         </span>
       </td>
-      <td className="py-2.5 text-right text-[11.5px] text-ink-faint max-md:hidden">
+      <td className="pr-4 py-2.5 text-right text-[11.5px] text-ink-faint max-md:hidden">
         {category.corrected > 0 ? category.corrected : '—'}
       </td>
-      <td className="py-2.5">
+      {/* align-middle because a table cell's default is baseline: an icon with no text next to it
+          then hangs off the row's text baseline rather than sitting in the middle of the row. */}
+      <td className="py-2.5 text-right align-middle">
         {/* Built-ins are part of the classifier's vocabulary — deleting one would silently shrink
             what the model is allowed to answer, so there is no control to offer. Renaming them is
             fine, which is why the name opens the dialog for every row. */}
@@ -354,7 +356,7 @@ function CategoryRow({
             aria-label={t('categories.delete')}
             disabled={deleting}
             onClick={onDelete}
-            className="text-ink-ghost hover:text-broken disabled:opacity-50"
+            className="inline-flex align-middle text-ink-ghost hover:text-broken disabled:opacity-50"
           >
             <Trash2 size={13} aria-hidden />
           </button>
