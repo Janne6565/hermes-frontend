@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as DigestRouteImport } from './routes/digest'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -27,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
 const AlertsRoute = AlertsRouteImport.update({
   id: '/alerts',
   path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoriesRoute = CategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DigestRoute = DigestRouteImport.update({
@@ -68,6 +74,7 @@ const MessageIdRoute = MessageIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
   '/onboarding': typeof OnboardingRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
   '/onboarding': typeof OnboardingRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
   '/onboarding': typeof OnboardingRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/alerts'
+    | '/categories'
     | '/digest'
     | '/health'
     | '/onboarding'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alerts'
+    | '/categories'
     | '/digest'
     | '/health'
     | '/onboarding'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/alerts'
+    | '/categories'
     | '/digest'
     | '/health'
     | '/onboarding'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertsRoute: typeof AlertsRoute
+  CategoriesRoute: typeof CategoriesRoute
   DigestRoute: typeof DigestRoute
   HealthRoute: typeof HealthRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/alerts'
       fullPath: '/alerts'
       preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/categories': {
+      id: '/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof CategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/digest': {
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRoute,
+  CategoriesRoute: CategoriesRoute,
   DigestRoute: DigestRoute,
   HealthRoute: HealthRoute,
   OnboardingRoute: OnboardingRoute,

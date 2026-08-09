@@ -5,6 +5,35 @@ import { useLanguage } from '@/hooks/useLanguage';
 import type { Message } from '@/api/types';
 
 /**
+ * The category, as a dot and a word.
+ *
+ * A dot rather than a filled badge on purpose: the priority badge is the only thing in a row
+ * allowed to carry weight, and a second coloured block would compete with it. The colour here says
+ * "which bucket", never "how urgent".
+ */
+function CategoryChip({
+  message,
+  dim = false,
+}: {
+  readonly message: Message;
+  readonly dim?: boolean;
+}) {
+  if (!message.category) return null;
+  return (
+    <span className="flex flex-none items-center gap-1.5">
+      <span
+        className="size-1.5"
+        style={{ backgroundColor: message.categoryColor ?? 'var(--color-line)' }}
+        aria-hidden
+      />
+      <span className={cn('label-caps', dim ? 'text-ink-faint' : 'text-ink-dimmer')}>
+        {message.category}
+      </span>
+    </span>
+  );
+}
+
+/**
  * A high-priority row: sender, subject, reason.
  *
  * A dismissed item stays in place but recedes to near-invisible rather than disappearing — the
@@ -54,6 +83,7 @@ export function HighMessageRow({
             {message.tag}
           </span>
         )}
+        <CategoryChip message={message} dim={cleared} />
         <span className="relative z-10 ml-auto flex flex-none items-center gap-2">
           <button
             type="button"
@@ -112,6 +142,7 @@ export function NormalMessageRow({
     >
       <div className="flex items-baseline gap-2.5">
         <span className="truncate text-[12px] text-ink-muted">{message.senderName}</span>
+        <CategoryChip message={message} dim />
         <span className="ml-auto flex-none text-[11px] text-ink-fainter">
           {formatTime(message.receivedAt, locale)}
         </span>

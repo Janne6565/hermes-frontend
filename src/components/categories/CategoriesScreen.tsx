@@ -1,0 +1,397 @@
+import { useTranslation } from 'react-i18next';
+import { Plus, Tags, Trash2 } from 'lucide-react';
+import { Button, EmptyState, ErrorState, SectionLabel, Spinner } from '@/components/ui';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useLanguage } from '@/hooks/useLanguage';
+import { formatDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { CATEGORY_COLORS, useCategoriesLogic } from './useCategoriesLogic';
+import type { Category, UnsureMessage } from '@/api/types';
+
+/**
+ * Screen 05 — what the mail is about, as opposed to how loud it is.
+ *
+ * The screen is built around one claim it has to keep honest: every message has exactly one
+ * category and none of this touches priority. So the table accounts for the whole window including
+ * the leftovers, the "typical" column reports what priority the mail *got* rather than offering a
+ * priority to set, and the correction panel says in words what a correction does.
+ */
+export function CategoriesScreen() {
+  const { t } = useTranslation();
+  const state = useCategoriesLogic();
+
+  if (state.isLoading) return <Spinner label={t('common.loading')} />;
+  if (state.isError) {
+    return (
+      <ErrorState
+        message={t('common.failed')}
+        retryLabel={t('common.retry')}
+        onRetry={() => void state.refetch()}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScreenHeader
+        title={t('categories.title')}
+        subtitle={t('categories.subtitle', { count: state.categories.length })}
+        actions={
+          <Button variant="outline" onClick={() => state.form.setOpen(!state.form.open)}>
+            <Plus size={12} aria-hidden />
+            {t('categories.new')}
+          </Button>
+        }
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 px-6 py-6 lg:overflow-y-auto">
+          {state.form.open && (
+            <div className="flex flex-col gap-3 border border-line bg-raised p-4">
+              <SectionLabel>{t('categories.new')}</SectionLabel>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={state.form.name}
+                  onChange={(event) => state.form.setName(event.target.value)}
+                  placeholder={t('categories.namePlaceholder')}
+                  className="min-w-48 flex-1 border border-line bg-sunken px-2.5 py-2 text-[12px] text-ink-soft outline-none placeholder:text-ink-ghost focus:border-amber-line"
+                />
+                <div className="flex gap-1.5">
+                  {CATEGORY_COLORS.map((swatch) => (
+                    <button
+                      key={swatch}
+                      type="button"
+                      aria-label={swatch}
+                      onClick={() => state.form.setColor(swatch)}
+                      className={cn(
+                        'size-6 border',
+                        state.form.color === swatch ? 'border-amber' : 'border-line',
+                      )}
+                    >
+                      <span
+                        className="block size-full"
+                        style={{ backgroundColor: swatch }}
+                        aria-hidden
+                      />
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  disabled={!state.canSubmit}
+                  loading={state.submitting}
+                  onClick={state.submit}
+                >
+                  {t('categories.create')}
+                </Button>
+              </div>
+              {state.duplicate && (
+                <p className="text-[11.5px] text-broken">{t('categories.duplicate')}</p>
+              )}
+            </div>
+          )}
+
+          {state.categories.length === 0 ? (
+            <EmptyState
+              title={t('categories.empty')}
+              hint={t('categories.emptyHint')}
+              icon={<Tags size={22} aria-hidden />}
+            />
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="label-caps border-b border-line text-ink-fainter">
+                  <th className="w-44 pb-2 font-normal">{t('categories.category')}</th>
+                  <th className="w-56 pb-2 font-normal">
+                    {t('categories.share', { days: String(state.windowDays) })}
+                  </th>
+                  <th className="w-24 pb-2 font-normal max-md:hidden">{t('categories.typical')}</th>
+                  <th className="pb-2 font-normal max-lg:hidden">{t('categories.matchedBy')}</th>
+                  <th className="w-20 pb-2 text-right font-normal max-md:hidden">
+                    {t('categories.corrected')}
+                  </th>
+                  <th className="w-10 pb-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {state.categories.map((category) => (
+                  <CategoryRow
+                    key={category.id}
+                    category={category}
+                    deleting={state.deletingId === category.id}
+                    onDelete={() => state.remove(category.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {state.mix && (
+            <div className="mt-auto flex flex-wrap gap-10 border-t border-line-dim pt-5">
+              <MixStat
+                value={share(state.mix.byRule, state.total)}
+                label={t('categories.settledByRule')}
+                tone="bright"
+              />
+              <MixStat
+                value={share(state.mix.byModel, state.total)}
+                label={t('categories.byModel')}
+              />
+              <MixStat
+                value={share(state.mix.lowConfidence, state.total)}
+                label={t('categories.askedYou')}
+                tone="accent"
+              />
+              {state.mix.byUser > 0 && (
+                <MixStat
+                  value={share(state.mix.byUser, state.total)}
+                  label={t('categories.byYou')}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        <aside className="flex w-full flex-none flex-col gap-5 border-t border-line-dim px-6 py-6 lg:w-100 lg:border-t-0 lg:border-l">
+          <div className="flex items-baseline gap-3">
+            <SectionLabel accent>{t('categories.needsACall')}</SectionLabel>
+            <span className="ml-auto text-[10.5px] text-ink-ghost">
+              {t('categories.needsACallCount', {
+                count: state.unsure.length,
+                total: String(state.total),
+              })}
+            </span>
+          </div>
+
+          {state.unsure.length === 0 ? (
+            <p className="font-sans text-[12.5px] leading-relaxed text-ink-faint">
+              {t('categories.nothingUnsure')}
+            </p>
+          ) : (
+            state.unsure.map((message) => (
+              <UnsureCard
+                key={message.messageId}
+                message={message}
+                busy={state.assigningId === message.messageId}
+                onAssign={(categoryId) => state.assignTo(message.messageId, categoryId)}
+              />
+            ))
+          )}
+
+          <div className="flex flex-col gap-2 border-t border-line-dim pt-4">
+            <SectionLabel>{t('categories.whatACorrectionDoes')}</SectionLabel>
+            <p className="font-sans text-[12.5px] leading-relaxed text-ink-dim">
+              {t('categories.correctionExplainer')}
+            </p>
+          </div>
+
+          {state.corrections.length > 0 && (
+            <div className="mt-auto flex flex-col gap-2 border-t border-line-dim pt-4">
+              <SectionLabel>{t('categories.recentCorrections')}</SectionLabel>
+              <ul className="flex flex-col gap-1.5 text-[11.5px] text-ink-dimmer">
+                {state.corrections.map((correction) => (
+                  <CorrectionLine key={correction.messageId} correction={correction} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function CategoryRow({
+  category,
+  deleting,
+  onDelete,
+}: {
+  readonly category: Category;
+  readonly deleting: boolean;
+  readonly onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <tr className="border-b border-line-faint text-[12px]">
+      <td className="py-2.5">
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span
+            className="size-1.5 flex-none"
+            style={{ backgroundColor: category.color }}
+            aria-hidden
+          />
+          <span className="truncate text-ink">{category.name}</span>
+        </span>
+      </td>
+      <td className="py-2.5">
+        <span className="flex items-center gap-2.5">
+          <span className="h-1.5 flex-1 bg-line-faint">
+            <span
+              className="block h-full"
+              style={{
+                backgroundColor: category.color,
+                width: `${Math.round(category.share * 100)}%`,
+              }}
+            />
+          </span>
+          <span className="w-10 flex-none text-right text-[11px] text-ink-dimmer">
+            {category.count}
+          </span>
+        </span>
+      </td>
+      <td
+        className={cn(
+          'py-2.5 max-md:hidden',
+          category.typicalPriority === 'high' ? 'text-amber' : 'text-ink-dim',
+        )}
+      >
+        {category.typicalPriority ?? '—'}
+      </td>
+      <td className="min-w-0 truncate py-2.5 font-sans text-[12.5px] text-ink-dimmer max-lg:hidden">
+        {category.matchedBy.length > 0 ? category.matchedBy.join(', ') : t('categories.modelOnly')}
+      </td>
+      <td className="py-2.5 text-right text-[11.5px] text-ink-faint max-md:hidden">
+        {category.corrected > 0 ? category.corrected : '—'}
+      </td>
+      <td className="py-2.5">
+        {/* Built-ins are part of the classifier's vocabulary — deleting one would silently shrink
+            what the model is allowed to answer, so there is no control to offer. */}
+        {!category.builtin && (
+          <button
+            type="button"
+            aria-label={t('categories.delete')}
+            disabled={deleting}
+            onClick={onDelete}
+            className="text-ink-ghost hover:text-broken disabled:opacity-50"
+          >
+            <Trash2 size={13} aria-hidden />
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function UnsureCard({
+  message,
+  busy,
+  onAssign,
+}: {
+  readonly message: UnsureMessage;
+  readonly busy: boolean;
+  readonly onAssign: (categoryId: string) => void;
+}) {
+  const { locale } = useLanguage();
+
+  return (
+    <div className="flex flex-col gap-2.5 border border-line bg-raised px-3.5 py-3">
+      <div className="flex items-baseline gap-2.5">
+        <span className="truncate text-[12px] text-ink-soft">{message.sender}</span>
+        <span className="ml-auto flex-none text-[11px] text-ink-fainter">
+          {message.confidence.toFixed(2)}
+        </span>
+      </div>
+      <p className="font-sans text-[12.5px] leading-snug text-ink-dimmer">{message.subject}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {message.guess && (
+          <ChoiceChip
+            label={message.guess.name}
+            primary
+            disabled={busy}
+            onClick={() => onAssign(message.guess?.id ?? '')}
+          />
+        )}
+        {message.alternative && (
+          <ChoiceChip
+            label={message.alternative.name}
+            disabled={busy}
+            onClick={() => onAssign(message.alternative?.id ?? '')}
+          />
+        )}
+        <span className="ml-auto text-[10.5px] text-ink-ghost">
+          {formatDate(message.receivedAt, locale)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** The guessed category is offered first; picking either one is a single tap, not a dropdown. */
+function ChoiceChip({
+  label,
+  primary = false,
+  disabled,
+  onClick,
+}: {
+  readonly label: string;
+  readonly primary?: boolean;
+  readonly disabled: boolean;
+  readonly onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'border px-2.5 py-1 text-[11px] disabled:opacity-50',
+        primary
+          ? 'border-amber-line text-amber hover:bg-amber-wash'
+          : 'border-line text-ink-dim hover:text-ink',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CorrectionLine({
+  correction,
+}: {
+  readonly correction: { subject: string; category?: string; previousCategory?: string };
+}) {
+  const { t } = useTranslation();
+  return (
+    <li className="flex flex-col">
+      <span className="truncate text-ink-muted">{correction.subject}</span>
+      <span className="text-ink-ghost">
+        → {correction.category ?? '—'}
+        {correction.previousCategory
+          ? ` ${t('categories.wasCategory', { category: correction.previousCategory })}`
+          : ''}
+      </span>
+    </li>
+  );
+}
+
+function MixStat({
+  value,
+  label,
+  tone = 'muted',
+}: {
+  readonly value: string;
+  readonly label: string;
+  readonly tone?: 'accent' | 'bright' | 'muted';
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span
+        className={cn(
+          'text-[26px] leading-none font-semibold',
+          tone === 'accent' && 'text-amber',
+          tone === 'bright' && 'text-ink',
+          tone === 'muted' && 'text-ink-dim',
+        )}
+      >
+        {value}
+      </span>
+      <span className="label-caps text-ink-faint">{label}</span>
+    </div>
+  );
+}
+
+/** An empty window is "—", not "0%" — nothing happened is not the same as nothing worked. */
+function share(part: number, total: number): string {
+  return total === 0 ? '—' : `${Math.round((part / total) * 100)}%`;
+}

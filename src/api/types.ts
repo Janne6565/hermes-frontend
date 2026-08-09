@@ -10,6 +10,7 @@ export type Priority = 'high' | 'normal' | 'noise';
 export type ClassifiedBy = 'rule' | 'llm' | 'fallback';
 export type RuleType = 'sender' | 'domain' | 'header';
 export type RuleSource = 'manual' | 'feedback';
+export type CategorySource = 'rule' | 'llm' | 'user' | 'none';
 export type AlertSource = 'grafana' | 'signoz';
 export type AlertSeverity = 'critical' | 'error' | 'warning' | 'info' | 'resolved';
 export type HealthStatus = 'ok' | 'degraded' | 'broken';
@@ -27,6 +28,10 @@ export interface Message {
   readonly summary?: string;
   readonly reason?: string;
   readonly classifiedBy: ClassifiedBy;
+  /** The one topic bucket this message is in. Absent only on rows that predate categories. */
+  readonly category?: string;
+  readonly categoryColor?: string;
+  readonly categorySource?: CategorySource;
   readonly notifiedAt?: string;
   readonly dismissed: boolean;
   readonly gmailUrl: string;
@@ -241,6 +246,81 @@ export interface GoogleAccount {
   readonly connectedAt?: string;
   readonly scope?: string;
   readonly clientConfigured: boolean;
+}
+
+export interface Category {
+  readonly id: string;
+  readonly name: string;
+  readonly color: string;
+  /** Seeded buckets; the classifier knows them by name, so they cannot be deleted. */
+  readonly builtin: boolean;
+  /** Where unresolved mail lands. Exactly one category has this. */
+  readonly fallback: boolean;
+  readonly count: number;
+  /** 0..1 of the window's messages. */
+  readonly share: number;
+  /**
+   * The priority this category's mail *actually* got, observed over the window. Not a setting —
+   * categories never decide priority.
+   */
+  readonly typicalPriority?: Priority;
+  readonly matchedBy: readonly string[];
+  readonly corrected: number;
+}
+
+/** Counts, not percentages, so the screen's numbers and its lists cannot disagree. */
+export interface CategoryMix {
+  readonly byRule: number;
+  readonly byModel: number;
+  readonly lowConfidence: number;
+  readonly byUser: number;
+  readonly unresolved: number;
+}
+
+export interface CategoryRef {
+  readonly id: string;
+  readonly name: string;
+  readonly color: string;
+}
+
+/** A message the classifier placed but was not confident about. */
+export interface UnsureMessage {
+  readonly messageId: string;
+  readonly sender: string;
+  readonly subject: string;
+  readonly receivedAt: string;
+  readonly confidence: number;
+  readonly guess?: CategoryRef;
+  readonly alternative?: CategoryRef;
+}
+
+export interface CategoryCorrection {
+  readonly messageId: string;
+  readonly subject: string;
+  readonly category?: string;
+  readonly previousCategory?: string;
+  readonly correctedAt: string;
+}
+
+export interface CategoryOverview {
+  readonly windowDays: number;
+  readonly categories: readonly Category[];
+  readonly mix: CategoryMix;
+  readonly unsure: readonly UnsureMessage[];
+  readonly recentCorrections: readonly CategoryCorrection[];
+}
+
+export interface CreateCategoryRequest {
+  readonly name: string;
+  readonly color: string;
+}
+
+/** Note the absence of a priority field — recategorising never changes what interrupts you. */
+export interface AssignCategoryRequest {
+  readonly messageId: string;
+  readonly categoryId: string;
+  readonly applyToDomain?: boolean;
+  readonly learn?: boolean;
 }
 
 export interface CreateRuleRequest {

@@ -1,4 +1,10 @@
-import { useMessageSearch, useHealth, useAlerts, useRules } from '@/api/queries';
+import {
+  useMessageSearch,
+  useHealth,
+  useAlerts,
+  useCategoryOverview,
+  useRules,
+} from '@/api/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatTime } from '@/lib/format';
 import { INBOX_LIMIT } from '@/components/inbox/useInboxLogic';
@@ -18,6 +24,7 @@ export function useNavRailLogic() {
   const health = useHealth();
   const alerts = useAlerts();
   const rules = useRules();
+  const categories = useCategoryOverview();
 
   const messages = recent.data ?? [];
   const counts = {
@@ -41,6 +48,7 @@ export function useNavRailLogic() {
     historyId: health.data?.historyId,
     alertCount: alerts.data?.length ?? 0,
     ruleCount: rules.data?.filter((rule) => rule.enabled).length ?? 0,
+    categoryCount: categories.data?.categories.length ?? 0,
   };
 }
 

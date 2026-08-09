@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { StatusDot } from '@/components/ui';
+import { HermesLockup } from '@/components/ui/HermesMark';
 import { useNavRailLogic } from './useNavRailLogic';
 import type { InboxSearch } from '@/routes/index';
 
@@ -13,15 +14,21 @@ import type { InboxSearch } from '@/routes/index';
  */
 export function NavRail() {
   const { t } = useTranslation();
-  const { counts, openHigh, dismissed, health, lastSync, historyId, alertCount, ruleCount } =
-    useNavRailLogic();
+  const {
+    counts,
+    openHigh,
+    dismissed,
+    health,
+    lastSync,
+    historyId,
+    alertCount,
+    ruleCount,
+    categoryCount,
+  } = useNavRailLogic();
 
   return (
     <nav className="flex w-52 flex-none flex-col border-r border-line bg-rail py-5 max-md:hidden">
-      <div className="flex items-center gap-2.5 px-4.5 pb-5">
-        <span className="size-2.5 bg-amber" aria-hidden />
-        <span className="text-[13px] font-semibold tracking-wide">{t('app.name')}</span>
-      </div>
+      <HermesLockup name={t('app.name')} className="gap-2.5 px-4.5 pb-5" />
 
       <div className="label-caps px-4.5 pb-2 text-ink-fainter">{t('nav.mail')}</div>
       <div className="flex flex-col">
@@ -59,6 +66,7 @@ export function NavRail() {
         />
         <RailLink to="/digest" label={t('nav.digest')} indent />
         <RailLink to="/search" label={t('nav.search')} indent />
+        <RailLink to="/categories" label={t('nav.categories')} value={categoryCount} indent />
       </div>
 
       <div className="label-caps px-4.5 pt-5 pb-2 text-ink-fainter">{t('nav.system')}</div>

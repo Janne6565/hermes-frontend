@@ -2,8 +2,12 @@ import { api } from './axios-instance';
 import type {
   AlertEvent,
   AlertOverview,
+  AssignCategoryRequest,
+  Category,
+  CategoryOverview,
   ClassifiedBy,
   Config,
+  CreateCategoryRequest,
   CreateRuleRequest,
   Digest,
   DigestStats,
@@ -25,6 +29,25 @@ import type {
  * Kept hand-written and thin so it mirrors `src/api/generated/` once Orval can reach a running
  * backend — swapping to the generated client is then an import change, not a rewrite.
  */
+
+export async function fetchCategoryOverview(days?: number): Promise<CategoryOverview> {
+  const { data } = await api.get<CategoryOverview>('/api/v1/categories', { params: { days } });
+  return data;
+}
+
+export async function createCategory(request: CreateCategoryRequest): Promise<Category> {
+  const { data } = await api.post<Category>('/api/v1/categories', request);
+  return data;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await api.delete(`/api/v1/categories/${id}`);
+}
+
+export async function assignCategory(request: AssignCategoryRequest): Promise<Category> {
+  const { data } = await api.post<Category>('/api/v1/categories/assign', request);
+  return data;
+}
 
 export async function fetchTodayDigest(): Promise<Digest> {
   const { data } = await api.get<Digest>('/api/v1/digest/today');
