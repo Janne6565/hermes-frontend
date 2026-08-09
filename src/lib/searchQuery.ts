@@ -15,6 +15,8 @@ export interface ParsedQuery {
   readonly after?: string;
   readonly before?: string;
   readonly classifiedBy?: ClassifiedBy;
+  /** Category name, matched case-insensitively by the server. */
+  readonly category?: string;
   /** Whatever was left once the tokens were removed. */
   readonly text?: string;
   /** Tokens that looked like filters but were not understood, kept for the UI to flag. */
@@ -67,6 +69,7 @@ export function parseQuery(input: string): ParsedQuery {
     after?: string;
     before?: string;
     classifiedBy?: ClassifiedBy;
+    category?: string;
   } = {};
 
   for (const word of words) {
@@ -99,6 +102,13 @@ export function parseQuery(input: string): ParsedQuery {
         if (ISO_DATE.test(value)) result.before = value;
         else unknown.push(word);
         break;
+      case 'category':
+      case 'cat':
+        // Not validated against the live category list: the parser is pure and synchronous, and a
+        // typo here costs an empty result set rather than a wrong one. A struck-through chip would
+        // also be wrong the moment a category is renamed in another tab.
+        result.category = value;
+        break;
       case 'classified_by':
       case 'classifiedby':
         if (CLASSIFIERS.has(value.toLowerCase()))
@@ -122,6 +132,7 @@ export function tokensOf(parsed: ParsedQuery): QueryToken[] {
   if (parsed.from) tokens.push({ key: 'from', value: parsed.from });
   if (parsed.after) tokens.push({ key: 'after', value: parsed.after });
   if (parsed.before) tokens.push({ key: 'before', value: parsed.before });
+  if (parsed.category) tokens.push({ key: 'category', value: parsed.category });
   if (parsed.classifiedBy) tokens.push({ key: 'classified_by', value: parsed.classifiedBy });
   return tokens;
 }
@@ -134,8 +145,21 @@ export function removeToken(input: string, token: QueryToken): string {
     .filter((word) => {
       const separator = word.indexOf(':');
       if (separator <= 0) return true;
-      const key = word.slice(0, separator).toLowerCase().replace('classifiedby', 'classified_by');
-      return !(key === token.key && word.slice(separator + 1).toLowerCase() === token.value);
+      const key = normaliseKey(word.slice(0, separator));
+      // Both sides lowercased. Comparing a lowercased word against a raw token value worked only
+      // because every filter until now had a lowercase vocabulary; a category is a user-chosen
+      // name, so `category:Billing` matched nothing and its chip's × did nothing.
+      return !(
+        key === token.key && word.slice(separator + 1).toLowerCase() === token.value.toLowerCase()
+      );
     })
     .join(' ');
+}
+
+/** Collapses the accepted spellings of a key onto the one the chips use. */
+function normaliseKey(key: string): string {
+  const lower = key.toLowerCase();
+  if (lower === 'classifiedby') return 'classified_by';
+  if (lower === 'cat') return 'category';
+  return lower;
 }

@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { useMessageSearch } from '@/api/queries';
+import { useCategoryOverview, useMessageSearch } from '@/api/queries';
 import {
   parseQuery,
   removeToken,
@@ -24,6 +24,7 @@ export function useSearchLogic() {
       after: parsed.after,
       before: parsed.before,
       classifiedBy: parsed.classifiedBy,
+      category: parsed.category,
       limit: 50,
     }),
     [parsed],
@@ -52,7 +53,23 @@ export function useSearchLogic() {
 
   // Computed once per mount rather than per render: the date example must not shift underfoot
   // between the click and the search it produces.
-  const examples = useMemo(() => searchExamples(new Date()), []);
+  const staticExamples = useMemo(() => searchExamples(new Date()), []);
+
+  // Category suggestions come from the live list rather than from `searchExamples`, which is a
+  // pure function with a test asserting every example it offers parses. Category names are data,
+  // not syntax, and baking them in would make that test a lie the first time one is renamed.
+  const categories = useCategoryOverview();
+  const examples = useMemo(() => {
+    const busiest = [...(categories.data?.categories ?? [])]
+      .filter((category) => category.count > 0 && !category.fallback)
+      .sort((first, second) => second.count - first.count)
+      .slice(0, 3)
+      // Quoted-less on purpose: the parser splits on whitespace, so a name with a space would not
+      // round-trip. Those are dropped from the suggestions rather than offered broken.
+      .filter((category) => !/\s/.test(category.name))
+      .map((category) => `category:${category.name}`);
+    return [...staticExamples, ...busiest];
+  }, [staticExamples, categories.data]);
 
   /**
    * Appends an example instead of replacing the box.

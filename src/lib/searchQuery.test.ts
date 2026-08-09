@@ -59,3 +59,40 @@ describe('searchExamples', () => {
     expect(searchExamples(new Date('2026-08-09T12:00:00Z'))).toContain('after:2026-08-02');
   });
 });
+
+describe('category filter', () => {
+  it('parses a category token and exposes it as a chip', () => {
+    const parsed = parseQuery('category:Billing rechnung');
+    expect(parsed.category).toBe('Billing');
+    expect(parsed.text).toBe('rechnung');
+    expect(tokensOf(parsed)).toContainEqual({ key: 'category', value: 'Billing' });
+  });
+
+  it('accepts the cat: shorthand', () => {
+    expect(parseQuery('cat:Alerts').category).toBe('Alerts');
+  });
+
+  it('preserves the name verbatim, since the server matches case-insensitively', () => {
+    // Lowercasing here would make the removable chip disagree with what the user typed.
+    expect(parseQuery('category:bILLing').category).toBe('bILLing');
+  });
+
+  it('removing the chip edits the raw query', () => {
+    const query = 'category:Billing rechnung';
+    const parsed = parseQuery(query);
+    expect(removeToken(query, { key: 'category', value: 'Billing' })).toBe('rechnung');
+    expect(parsed.unknown).toEqual([]);
+  });
+});
+
+describe('removeToken casing', () => {
+  it('removes a chip whose value is not lowercase', () => {
+    // Regression: the comparison lowercased only one side, so any filter with a user-chosen
+    // value — which categories are — had a chip whose × silently did nothing.
+    expect(removeToken('category:Billing x', { key: 'category', value: 'Billing' })).toBe('x');
+  });
+
+  it('removes a chip written with the shorthand key', () => {
+    expect(removeToken('cat:Alerts x', { key: 'category', value: 'Alerts' })).toBe('x');
+  });
+});
