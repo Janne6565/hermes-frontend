@@ -86,6 +86,35 @@ export function InboxScreen() {
           </button>
         </div>
 
+        {/* Only when there is a choice to make. One category is not a filter, it is a label, and a
+            row of chips that all say the same thing is noise in a screen about removing noise. */}
+        {inbox.categories.length > 1 && (
+          <div className="flex flex-none gap-1.5 overflow-x-auto border-b border-line-faint px-4.5 py-2">
+            {inbox.categories.map((category) => (
+              <button
+                key={category.name}
+                type="button"
+                onClick={() => inbox.toggleCategory(category.name)}
+                aria-pressed={inbox.activeCategory === category.name}
+                className={cn(
+                  'flex flex-none items-center gap-1.5 border px-2 py-0.5 text-[11px] transition-colors',
+                  inbox.activeCategory === category.name
+                    ? 'border-amber-line text-amber'
+                    : 'border-line text-ink-faint hover:text-ink-dim',
+                )}
+              >
+                <span
+                  className="size-1.5 flex-none"
+                  style={{ backgroundColor: category.color }}
+                  aria-hidden
+                />
+                {category.name}
+                <span className="text-ink-fainter">{category.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="min-h-0 flex-1 overflow-y-auto">
           <>
             {inbox.showHigh && inbox.high.length > 0 && (
@@ -164,7 +193,17 @@ export function InboxScreen() {
               />
             ))}
 
-            {isEmpty && (inbox.noise?.count ?? 0) === 0 && (
+            {/* An active filter changes what "empty" means. "No mail yet today" under a category
+                chip that just hid everything would be the screen lying about the mailbox. */}
+            {isEmpty && (inbox.noise?.count ?? 0) === 0 && inbox.activeCategory && (
+              <EmptyState
+                title={t('inbox.emptyCategory', { category: inbox.activeCategory })}
+                hint={t('inbox.emptyCategoryHint')}
+                icon={<Inbox size={22} aria-hidden />}
+              />
+            )}
+
+            {isEmpty && (inbox.noise?.count ?? 0) === 0 && !inbox.activeCategory && (
               <EmptyState
                 title={t('inbox.empty')}
                 hint={
