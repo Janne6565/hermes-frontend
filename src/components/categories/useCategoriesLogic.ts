@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   useAssignCategory,
+  useBackfillCategories,
   useCategoryOverview,
   useCreateCategory,
   useDeleteCategory,
@@ -29,6 +30,7 @@ export function useCategoriesLogic() {
   const create = useCreateCategory();
   const remove = useDeleteCategory();
   const assign = useAssignCategory();
+  const backfill = useBackfillCategories();
 
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
@@ -80,5 +82,12 @@ export function useCategoriesLogic() {
     remove: (id: string) => remove.mutate(id),
     assigningId: assign.isPending ? assign.variables?.messageId : undefined,
     assignTo: (messageId: string, categoryId: string) => assign.mutate({ messageId, categoryId }),
+    // Offered only when there is something to fix. A button that always says "backfill" invites a
+    // pointless run that still costs a round trip and reads as a no-op.
+    uncategorised: categories.find((category) => category.fallback)?.count ?? 0,
+    backfill: () => backfill.mutate(undefined),
+    backfilling: backfill.isPending,
+    backfillResult: backfill.data,
+    backfillFailed: backfill.isError,
   };
 }

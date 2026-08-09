@@ -310,6 +310,20 @@ export interface CategoryOverview {
   readonly recentCorrections: readonly CategoryCorrection[];
 }
 
+/**
+ * The outcome of one backfill run. `skipped` and `remaining` stay separate: skipped messages were
+ * offered to the classifier and it had no answer, remaining ones were never reached — collapsing
+ * them would make a second run look pointless when it is not.
+ */
+export interface CategoryBackfill {
+  readonly candidates: number;
+  readonly categorisedByRule: number;
+  readonly categorisedByModel: number;
+  readonly skipped: number;
+  readonly remaining: number;
+  readonly stoppedBecause?: 'limit' | 'sidecar_unavailable';
+}
+
 export interface CreateCategoryRequest {
   readonly name: string;
   readonly color: string;

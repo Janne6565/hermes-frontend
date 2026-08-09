@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, Tags, Trash2 } from 'lucide-react';
-import { Button, EmptyState, ErrorState, SectionLabel, Spinner } from '@/components/ui';
+import { Plus, Tags, Trash2, Wand2 } from 'lucide-react';
+import { Button, EmptyState, ErrorState, Notice, SectionLabel, Spinner } from '@/components/ui';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatDate } from '@/lib/format';
@@ -37,15 +37,52 @@ export function CategoriesScreen() {
         title={t('categories.title')}
         subtitle={t('categories.subtitle', { count: state.categories.length })}
         actions={
-          <Button variant="outline" onClick={() => state.form.setOpen(!state.form.open)}>
-            <Plus size={12} aria-hidden />
-            {t('categories.new')}
-          </Button>
+          <>
+            {state.uncategorised > 0 && (
+              <Button
+                variant="ghost"
+                loading={state.backfilling}
+                onClick={state.backfill}
+                title={t('categories.backfillHint')}
+              >
+                <Wand2 size={12} aria-hidden />
+                {state.backfilling
+                  ? t('categories.backfilling')
+                  : t('categories.backfill', { count: state.uncategorised })}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => state.form.setOpen(!state.form.open)}>
+              <Plus size={12} aria-hidden />
+              {t('categories.new')}
+            </Button>
+          </>
         }
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         <div className="flex min-w-0 flex-1 flex-col gap-4 px-6 py-6 lg:overflow-y-auto">
+          {state.backfillFailed && (
+            <Notice label={t('categories.backfillFailedLabel')} tone="broken">
+              {t('categories.backfillFailed')}
+            </Notice>
+          )}
+
+          {state.backfillResult && (
+            <Notice label={t('categories.backfillDoneLabel')}>
+              {t('categories.backfillDone', {
+                rule: String(state.backfillResult.categorisedByRule),
+                model: String(state.backfillResult.categorisedByModel),
+              })}{' '}
+              {state.backfillResult.remaining > 0 &&
+                t(
+                  state.backfillResult.stoppedBecause === 'sidecar_unavailable'
+                    ? 'categories.backfillStalled'
+                    : 'categories.backfillMore',
+                  { count: state.backfillResult.remaining },
+                )}
+            </Notice>
+          )}
+
           {state.form.open && (
             <div className="flex flex-col gap-3 border border-line bg-raised p-4">
               <SectionLabel>{t('categories.new')}</SectionLabel>
