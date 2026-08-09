@@ -100,6 +100,53 @@
   }
 }
 
+/*
+ * A scrollbar that looks like it belongs to the instrument.
+ *
+ * The default is wrong here in two ways. On macOS it is an overlay that fades out entirely, so a
+ * chip row that scrolls sideways gives no hint that it does — the affordance only appears once you
+ * have already guessed. And where it does render, it is a rounded light-mode artefact sitting in a
+ * near-black panel.
+ *
+ * So: square, like everything else, thin enough not to compete with the content it scrolls, and
+ * drawn in the same border grey as the panel edges. The track stays transparent — a filled groove
+ * would read as a second divider under a row that already sits on one.
+ */
+@utility scrollbar-slim {
+  /* Firefox has no pseudo-elements for this; these two properties are the whole API. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+  }
+
+  /* Brightens on hovering the *container*, not the thumb: by the time the pointer is on a 6px
+     target the feedback is redundant, and what you want is for the bar to announce itself while
+     you are still reading the row. */
+  &:hover::-webkit-scrollbar-thumb {
+    background: var(--color-ink-ghost);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-faint);
+  }
+
+  /* Chrome draws a resize handle here on a two-axis scroller; nothing about it is ours. */
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
 @utility label-caps {
   font-size: 10px;
   letter-spacing: 0.16em;
