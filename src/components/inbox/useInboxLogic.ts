@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
+  useConfig,
   useDismissMessage,
   useMessageSearch,
   useSendFeedback,
@@ -31,6 +32,17 @@ export function useInboxLogic() {
   const dismiss = useDismissMessage();
   const feedback = useSendFeedback();
   const sync = useSyncMessages();
+
+  /**
+   * How often the backend goes and looks, per the server's own config.
+   *
+   * Read rather than written into the copy: the interval is a ConfigMap value that has already
+   * changed once, and a hardcoded "every three minutes" in a hint is a claim that goes quietly
+   * false the next time it moves. Undefined until the config lands, which is what lets the strings
+   * fall back to a version that names no number at all.
+   */
+  const config = useConfig();
+  const pollIntervalSeconds = config.data?.data.pollIntervalSeconds;
 
   const { view } = useSearch({ from: '/' });
   const navigate = useNavigate({ from: '/' });
@@ -239,6 +251,7 @@ export function useInboxLogic() {
     refresh,
     refreshing: sync.isPending,
     syncNotice,
+    pollIntervalSeconds,
     view,
     setView,
     showHigh,

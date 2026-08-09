@@ -47,8 +47,14 @@ export const queryKeys = {
   googleAccount: ['auth', 'google'] as const,
 };
 
-/** The inbox and widget stay live without a manual refresh; the poll loop is 180s anyway. */
-const LIVE_REFETCH_MS = 60_000;
+/**
+ * The inbox and widget stay live without a manual refresh, in step with the backend's poll loop.
+ *
+ * Matched to `hermes.gmail.poll-interval` rather than set independently: whichever of the two is
+ * slower decides how long a mail sits unseen, so a UI interval above the poll interval would spend
+ * the backend's latency gain and give nothing back.
+ */
+const LIVE_REFETCH_MS = 30_000;
 
 export function useTodayDigest() {
   return useQuery({

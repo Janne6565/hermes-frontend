@@ -72,9 +72,13 @@ export function InboxScreen() {
             type="button"
             onClick={inbox.refresh}
             disabled={inbox.refreshing}
-            // The poll runs every three minutes on its own; this is for the minutes in between,
-            // when you know a mail was just sent and would rather not wait out the tick.
-            title={t('inbox.refreshHint')}
+            // The backend polls on its own; this is for the gap in between, when you know a mail
+            // was just sent and would rather not wait out the tick.
+            title={
+              inbox.pollIntervalSeconds === undefined
+                ? t('inbox.refreshHintUnknown')
+                : t('inbox.refreshHint', { seconds: String(inbox.pollIntervalSeconds) })
+            }
             aria-label={t('inbox.refresh')}
             className="-mr-1 flex-none p-1 text-ink-fainter transition-colors hover:text-ink disabled:cursor-not-allowed disabled:text-ink-ghost"
           >
@@ -163,7 +167,11 @@ export function InboxScreen() {
             {isEmpty && (inbox.noise?.count ?? 0) === 0 && (
               <EmptyState
                 title={t('inbox.empty')}
-                hint={t('inbox.emptyHint')}
+                hint={
+                  inbox.pollIntervalSeconds === undefined
+                    ? t('inbox.emptyHintUnknown')
+                    : t('inbox.emptyHint', { seconds: String(inbox.pollIntervalSeconds) })
+                }
                 icon={<Inbox size={22} aria-hidden />}
               />
             )}

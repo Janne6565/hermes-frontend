@@ -68,7 +68,7 @@ export async function fetchOpenHighPriority(days = 7): Promise<Message[]> {
 }
 
 /**
- * Polls the mailbox now instead of waiting out the 180s tick.
+ * Polls the mailbox now instead of waiting out the next scheduled tick.
  *
  * Resolves only once the sync is done, so whatever it ingested is already in the index by the time
  * the caller reloads the list.
