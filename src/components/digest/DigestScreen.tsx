@@ -1,6 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Moon } from 'lucide-react';
-import { EmptyState, ErrorState, Notice, SectionLabel, Spinner, Stat } from '@/components/ui';
+import { ChevronLeft, ChevronRight, Moon, Send } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Notice,
+  SectionLabel,
+  Spinner,
+  Stat,
+} from '@/components/ui';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatDateLong, formatTime } from '@/lib/format';
@@ -35,6 +43,19 @@ export function DigestScreen() {
         subtitle={formatDateLong(data.date, locale)}
         actions={
           <>
+            {/* In the header rather than next to the delivery panel: on a day where nothing
+                arrived the screen renders an empty state instead of that panel, and re-sending is
+                exactly what you want to reach on a day that looks suspiciously quiet. */}
+            {digest.isToday && (
+              <Button
+                variant="outline"
+                loading={digest.sendNow.isPending}
+                onClick={() => digest.sendNow.mutate()}
+              >
+                <Send size={12} aria-hidden />
+                {digest.sendNow.isPending ? t('digest.sending') : t('digest.sendNow')}
+              </Button>
+            )}
             <NavButton
               label={t('digest.previousDay')}
               disabled={!digest.previous}
@@ -50,6 +71,16 @@ export function DigestScreen() {
           </>
         }
       />
+
+      {/* Outside the branch below: the send button is in the header on every day, including the
+          empty one that renders no body at all, so its failure has to be visible there too. */}
+      {digest.sendNow.isError && (
+        <div className="px-6 pt-4 lg:px-10">
+          <Notice label={t('common.failed')} tone="broken">
+            {t('digest.sendFailed')}
+          </Notice>
+        </div>
+      )}
 
       {counts.high + silenced === 0 ? (
         <EmptyState

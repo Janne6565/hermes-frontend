@@ -16,6 +16,7 @@ import {
   fetchAlertOverview,
   snoozeAlert,
   fetchConfig,
+  sendDigestNow,
   sendTestPush,
   disconnectGoogle,
   dismissMessage,
@@ -301,6 +302,24 @@ export function useConfig() {
 /** Not a query — sending a test push is an action with a side effect on the user's phone. */
 export function useSendTestPush() {
   return useMutation({ mutationFn: sendTestPush });
+}
+
+/**
+ * Sends today's digest on demand.
+ *
+ * Writes the returned digest straight into the today cache instead of only invalidating it: the
+ * response *is* the freshly sent digest, and a refetch would show the same day without the
+ * narrative for as long as the round trip takes.
+ */
+export function useSendDigestNow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: sendDigestNow,
+    onSuccess: (digest) => {
+      queryClient.setQueryData(queryKeys.digestToday, digest);
+      void queryClient.invalidateQueries({ queryKey: ['digest', 'stats'] });
+    },
+  });
 }
 
 export function useGoogleAccount() {

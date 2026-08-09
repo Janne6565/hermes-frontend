@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useConfig, useDigest, useDigestStats, useTodayDigest } from '@/api/queries';
+import {
+  useConfig,
+  useDigest,
+  useDigestStats,
+  useSendDigestNow,
+  useTodayDigest,
+} from '@/api/queries';
 import { toIsoDate } from '@/lib/format';
 
 /**
@@ -18,6 +24,7 @@ export function useDigestLogic() {
   const historical = useDigest(date);
   const stats = useDigestStats(7);
   const config = useConfig();
+  const sendNow = useSendDigestNow();
 
   const query = isToday ? live : historical;
 
@@ -45,6 +52,7 @@ export function useDigestLogic() {
     isError: query.isError,
     refetch: query.refetch,
     data: query.data,
+    sendNow,
     week: stats.data?.days ?? [],
     maxInterruptions,
     config: config.data,

@@ -75,6 +75,15 @@ export async function fetchTodayDigest(): Promise<Digest> {
   return data;
 }
 
+/**
+ * Runs the evening send now. Slow by nature — the narrator is an LLM call — so callers must show
+ * the request as in flight rather than assume it returns promptly.
+ */
+export async function sendDigestNow(): Promise<Digest> {
+  const { data } = await api.post<Digest>('/api/v1/digest/send');
+  return data;
+}
+
 export async function fetchDigest(date: string): Promise<Digest> {
   const { data } = await api.get<Digest>(`/api/v1/digest/${date}`);
   return data;
