@@ -330,6 +330,12 @@ export interface CreateCategoryRequest {
   readonly color: string;
 }
 
+/** Both optional — send only what changes. */
+export interface UpdateCategoryRequest {
+  readonly name?: string;
+  readonly color?: string;
+}
+
 /** Note the absence of a priority field — recategorising never changes what interrupts you. */
 export interface AssignCategoryRequest {
   readonly messageId: string;

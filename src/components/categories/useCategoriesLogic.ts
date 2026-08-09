@@ -5,6 +5,7 @@ import {
   useCategoryOverview,
   useCreateCategory,
   useDeleteCategory,
+  useRenameCategory,
 } from '@/api/queries';
 
 /**
@@ -29,6 +30,7 @@ export function useCategoriesLogic() {
   const overview = useCategoryOverview();
   const create = useCreateCategory();
   const remove = useDeleteCategory();
+  const rename = useRenameCategory();
   const assign = useAssignCategory();
   const backfill = useBackfillCategories();
 
@@ -79,6 +81,14 @@ export function useCategoriesLogic() {
     // only fires when another tab created the same one.
     duplicate:
       (create.error as { response?: { status?: number } } | null)?.response?.status === 409,
+    renamingId: rename.isPending ? rename.variables?.id : undefined,
+    // 409 means another category already holds the name. Surfaced per row rather than globally,
+    // since the row is where the offending input still sits.
+    renameConflictId:
+      (rename.error as { response?: { status?: number } } | null)?.response?.status === 409
+        ? rename.variables?.id
+        : undefined,
+    renameTo: (id: string, name: string, color?: string) => rename.mutate({ id, name, color }),
     deletingId: remove.isPending ? remove.variables : undefined,
     remove: (id: string) => remove.mutate(id),
     assigningId: assign.isPending ? assign.variables?.messageId : undefined,

@@ -7,6 +7,7 @@ import {
   createRule,
   deleteCategory,
   fetchCategoryOverview,
+  renameCategory,
   dryRunRule,
   fetchDigestStats,
   fetchRecentFeedback,
@@ -35,6 +36,7 @@ import {
 import type {
   AssignCategoryRequest,
   CreateCategoryRequest,
+  UpdateCategoryRequest,
   CreateRuleRequest,
   FeedbackRequest,
   RuleType,
@@ -154,6 +156,24 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: (request: CreateCategoryRequest) => createCategory(request),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+/**
+ * Renames or recolours a category.
+ *
+ * Invalidates the message lists as well: the category name is denormalised onto every message chip
+ * in the inbox, digest and search, so those would keep showing the old label until their next poll.
+ */
+export function useRenameCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...request }: UpdateCategoryRequest & { id: string }) =>
+      renameCategory(id, request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['categories'] });
+      void queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
   });
 }
 

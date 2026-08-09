@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tags, Trash2, Wand2 } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Notice, SectionLabel, Spinner } from '@/components/ui';
@@ -164,6 +165,9 @@ export function CategoriesScreen() {
                     key={category.id}
                     category={category}
                     deleting={state.deletingId === category.id}
+                    renaming={state.renamingId === category.id}
+                    conflict={state.renameConflictId === category.id}
+                    onRename={(name, color) => state.renameTo(category.id, name, color)}
                     onDelete={() => state.remove(category.id)}
                   />
                 ))}
@@ -250,25 +254,76 @@ export function CategoriesScreen() {
 function CategoryRow({
   category,
   deleting,
+  renaming,
+  conflict,
+  onRename,
   onDelete,
 }: {
   readonly category: Category;
   readonly deleting: boolean;
+  readonly renaming: boolean;
+  readonly conflict: boolean;
+  readonly onRename: (name: string, color?: string) => void;
   readonly onDelete: () => void;
 }) {
   const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(category.name);
+  const [color, setColor] = useState(category.color);
+
+  const open = () => {
+    setDraft(category.name);
+    setColor(category.color);
+    setEditing(true);
+  };
+
+  const commit = () => {
+    const name = draft.trim();
+    // Nothing to send is not an error — closing an edit you did not make should just close it.
+    if (name.length > 0 && (name !== category.name || color !== category.color)) {
+      onRename(name, color);
+    }
+    setEditing(false);
+  };
 
   return (
     <tr className="border-b border-line-faint text-[12px]">
       <td className="py-2.5">
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span
-            className="size-1.5 flex-none"
-            style={{ backgroundColor: category.color }}
-            aria-hidden
-          />
-          <span className="truncate text-ink">{category.name}</span>
-        </span>
+        {editing ? (
+          <span className="flex min-w-0 items-center gap-2">
+            <ColorDot color={color} />
+            <input
+              value={draft}
+              // biome-ignore lint/a11y/noAutofocus: the row turned into a form on the user's click
+              autoFocus
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={commit}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') commit();
+                // Escape abandons the edit rather than saving it — blur would otherwise commit.
+                if (event.key === 'Escape') setEditing(false);
+              }}
+              aria-label={t('categories.rename')}
+              className="min-w-0 flex-1 border border-amber-line bg-sunken px-1.5 py-0.5 text-[12px] text-ink outline-none"
+            />
+          </span>
+        ) : (
+          <span className="flex min-w-0 items-center gap-2.5">
+            <ColorDot color={category.color} />
+            <button
+              type="button"
+              onClick={open}
+              disabled={renaming}
+              title={t('categories.rename')}
+              className="truncate text-left text-ink hover:text-amber disabled:opacity-50"
+            >
+              {category.name}
+            </button>
+          </span>
+        )}
+        {conflict && (
+          <span className="mt-1 block text-[11px] text-broken">{t('categories.duplicate')}</span>
+        )}
       </td>
       <td className="py-2.5">
         <span className="flex items-center gap-2.5">
@@ -302,7 +357,8 @@ function CategoryRow({
       </td>
       <td className="py-2.5">
         {/* Built-ins are part of the classifier's vocabulary — deleting one would silently shrink
-            what the model is allowed to answer, so there is no control to offer. */}
+            what the model is allowed to answer, so there is no control to offer. Renaming them is
+            fine, and is why the name itself is the button rather than this cell. */}
         {!category.builtin && (
           <button
             type="button"
@@ -397,6 +453,10 @@ function UnsureCard({
       </div>
     </div>
   );
+}
+
+function ColorDot({ color }: { readonly color: string }) {
+  return <span className="size-1.5 flex-none" style={{ backgroundColor: color }} aria-hidden />;
 }
 
 /** The two the classifier named are single taps; everything else lives behind the select. */

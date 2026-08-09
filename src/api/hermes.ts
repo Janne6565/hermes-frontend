@@ -10,6 +10,7 @@ import type {
   Config,
   CreateCategoryRequest,
   CreateRuleRequest,
+  UpdateCategoryRequest,
   Digest,
   DigestStats,
   FeedbackRequest,
@@ -38,6 +39,14 @@ export async function fetchCategoryOverview(days?: number): Promise<CategoryOver
 
 export async function createCategory(request: CreateCategoryRequest): Promise<Category> {
   const { data } = await api.post<Category>('/api/v1/categories', request);
+  return data;
+}
+
+export async function renameCategory(
+  id: string,
+  request: UpdateCategoryRequest,
+): Promise<Category> {
+  const { data } = await api.patch<Category>(`/api/v1/categories/${id}`, request);
   return data;
 }
 
