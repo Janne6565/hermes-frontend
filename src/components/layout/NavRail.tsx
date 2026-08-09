@@ -65,7 +65,9 @@ export function NavRail() {
           search={{ view: 'noise' }}
         />
         <RailLink to="/digest" label={t('nav.digest')} indent />
-        <RailLink to="/search" label={t('nav.search')} indent />
+        {/* The shortcut is only discoverable if something says it exists. It sits on the row it
+            duplicates rather than in a help screen nobody opens. */}
+        <RailLink to="/search" label={t('nav.search')} hint="⌘K" indent />
         <RailLink to="/categories" label={t('nav.categories')} value={categoryCount} indent />
       </div>
 
@@ -100,10 +102,11 @@ interface RailLinkProps {
   readonly dim?: boolean;
   readonly exact?: boolean;
   readonly dot?: 'ok' | 'warn' | 'bad';
+  readonly hint?: string;
   readonly search?: InboxSearch;
 }
 
-function RailLink({ to, label, value, accent, indent, dim, dot, search }: RailLinkProps) {
+function RailLink({ to, label, value, accent, indent, dim, dot, hint, search }: RailLinkProps) {
   return (
     <Link
       to={to}
@@ -122,6 +125,7 @@ function RailLink({ to, label, value, accent, indent, dim, dot, search }: RailLi
       }}
     >
       <span>{label}</span>
+      {hint && <span className="ml-auto text-[10.5px] text-ink-ghost">{hint}</span>}
       {dot ? (
         <StatusDot state={dot} />
       ) : value !== undefined ? (
