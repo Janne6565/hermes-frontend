@@ -356,7 +356,8 @@ function CategoryRow({
             aria-label={t('categories.delete')}
             disabled={deleting}
             onClick={onDelete}
-            className="inline-flex align-middle text-ink-ghost hover:text-broken disabled:opacity-50"
+            // 13px icon, 24px target — see the same fix on the rules table (WCAG 2.5.8).
+            className="-m-1.5 inline-flex p-1.5 align-middle text-ink-ghost hover:text-broken disabled:opacity-50"
           >
             <Trash2 size={13} aria-hidden />
           </button>

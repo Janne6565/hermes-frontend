@@ -9,6 +9,60 @@ import type { Priority, RuleType } from '@/api/types';
 const RULE_TYPES: readonly RuleType[] = ['sender', 'domain', 'header'];
 const PRIORITIES: readonly Priority[] = ['high', 'normal', 'noise'];
 
+/**
+ * The segmented pick-one-of-three used twice by the new-rule form.
+ *
+ * A `<fieldset>` of hidden radios rather than a row of buttons: the browser then owns the
+ * grouping, the "1 of 3" position, the selected state and arrow-key traversal, none of which a
+ * button row can express. The label carries the whole visual, so it also carries the focus ring —
+ * a hidden input's own outline would be drawn around nothing.
+ */
+function SegmentedChoice<T extends string>({
+  legend,
+  name,
+  options,
+  value,
+  onChange,
+}: {
+  readonly legend: string;
+  readonly name: string;
+  readonly options: readonly T[];
+  readonly value: T;
+  readonly onChange: (next: T) => void;
+}) {
+  return (
+    <fieldset className="m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0">
+      <legend className="p-0 text-[10.5px] tracking-wider text-ink-fainter uppercase">
+        {legend}
+      </legend>
+      <div className="flex gap-1.5">
+        {options.map((option) => (
+          <label
+            key={option}
+            className={cn(
+              'flex-1 cursor-pointer border py-1.5 text-center text-[11.5px]',
+              'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-amber',
+              value === option
+                ? 'border-amber-line text-amber'
+                : 'border-line text-ink-faint hover:text-ink-dim',
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className="sr-only"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /** Screen 04 — the rule table plus the new-rule form. */
 export function RulesScreen() {
   const { t } = useTranslation();
@@ -89,10 +143,14 @@ export function RulesScreen() {
                     <td className="py-2.5">
                       <button
                         type="button"
+                        // on/off is a toggle, and "on" was conveyed by amber alone — aria-pressed
+                        // is what makes the state audible as well as visible.
+                        aria-pressed={rule.enabled}
+                        aria-label={t('rules.toggle', { pattern: rule.pattern })}
                         disabled={state.togglingId === rule.id}
                         onClick={() => state.toggle(rule.id, !rule.enabled)}
                         className={cn(
-                          'border px-2 py-0.5 text-[10.5px] disabled:opacity-50',
+                          'min-h-6 border px-2 py-0.5 text-[10.5px] disabled:opacity-50',
                           rule.enabled
                             ? 'border-amber-line text-amber'
                             : 'border-line text-ink-fainter',
@@ -107,7 +165,10 @@ export function RulesScreen() {
                         aria-label={t('rules.delete')}
                         disabled={state.deletingId === rule.id}
                         onClick={() => state.remove(rule.id)}
-                        className="text-ink-ghost hover:text-broken disabled:opacity-50"
+                        // The icon is 13px; the hit area must not be. Negative margin keeps the
+                        // row's own spacing while the padding grows the target past the 24px
+                        // floor (WCAG 2.5.8).
+                        className="-m-1.5 inline-flex p-1.5 text-ink-ghost hover:text-broken disabled:opacity-50"
                       >
                         <Trash2 size={13} aria-hidden />
                       </button>
@@ -122,63 +183,46 @@ export function RulesScreen() {
         <aside className="flex w-full flex-none flex-col gap-5 border-t border-line-dim px-6 py-6 lg:w-90 lg:border-t-0 lg:border-l">
           <SectionLabel>{t('rules.newRule')}</SectionLabel>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] tracking-wider text-ink-fainter uppercase">
-              {t('rules.type')}
-            </span>
-            <div className="flex gap-1.5">
-              {RULE_TYPES.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => state.form.setType(option)}
-                  className={cn(
-                    'flex-1 border py-1.5 text-center text-[11.5px]',
-                    state.form.type === option
-                      ? 'border-amber-line text-amber'
-                      : 'border-line text-ink-faint hover:text-ink-dim',
-                  )}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Type and priority are each pick-one-of-three. They were six plain buttons whose
+              chosen state was carried by amber alone — no grouping, no selected state, nothing a
+              screen reader could report. Real radios inside labels get all of that for free,
+              arrow-key traversal included; the input is visually hidden and the label keeps the
+              segmented look. */}
+          <SegmentedChoice
+            legend={t('rules.type')}
+            name="rule-type"
+            options={RULE_TYPES}
+            value={state.form.type}
+            onChange={state.form.setType}
+          />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] tracking-wider text-ink-fainter uppercase">
+            {/* A real <label for>, not a caption that merely sits above the box: this input had no
+                accessible name at all, so it was announced as an unlabelled text field. */}
+            <label
+              htmlFor="rule-pattern"
+              className="text-[10.5px] tracking-wider text-ink-fainter uppercase"
+            >
               {t('rules.pattern')}
-            </span>
+            </label>
             <input
+              id="rule-pattern"
               value={state.form.pattern}
               onChange={(event) => state.form.setPattern(event.target.value)}
               placeholder={t('rules.patternPlaceholder')}
-              className="border border-line bg-sunken px-2.5 py-2 text-[12px] text-ink-soft outline-none placeholder:text-ink-ghost focus:border-amber-line"
+              // No `outline-none`: the amber border on focus is a 1px change in a panel full of
+              // 1px borders, which left keyboard users with no reliable indicator.
+              className="border border-line bg-sunken px-2.5 py-2 text-[12px] text-ink-soft placeholder:text-ink-ghost focus:border-amber-line"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[10.5px] tracking-wider text-ink-fainter uppercase">
-              {t('rules.priorityColumn')}
-            </span>
-            <div className="flex gap-1.5">
-              {PRIORITIES.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => state.form.setPriority(option)}
-                  className={cn(
-                    'flex-1 border py-1.5 text-center text-[11.5px]',
-                    state.form.priority === option
-                      ? 'border-amber-line text-amber'
-                      : 'border-line text-ink-faint hover:text-ink-dim',
-                  )}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SegmentedChoice
+            legend={t('rules.priorityColumn')}
+            name="rule-priority"
+            options={PRIORITIES}
+            value={state.form.priority}
+            onChange={state.form.setPriority}
+          />
 
           <Button
             variant="outline"

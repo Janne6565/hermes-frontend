@@ -43,9 +43,10 @@ export function InboxScreen() {
     <div className="flex h-full">
       <section className="flex w-full flex-col border-r border-line md:w-[452px] md:flex-none">
         <div className="flex h-13 flex-none items-center gap-3.5 border-b border-line-dim px-4.5">
-          <span className="text-[12px] tracking-widest text-ink-dim uppercase">
-            {t('nav.inbox')}
-          </span>
+          {/* Every other screen titles itself with ScreenHeader's <h1>; the inbox drew its own
+              header and used a <span>, which left the app's busiest route with no top-level
+              heading to jump to at all. */}
+          <h1 className="text-[12px] tracking-widest text-ink-dim uppercase">{t('nav.inbox')}</h1>
           <SyncNotice notice={inbox.syncNotice} />
           <div className="ml-auto flex gap-1.5 text-[11px]">
             <FilterChip
@@ -243,8 +244,14 @@ function SyncNotice({ notice }: { readonly notice: SyncResult | 'error' | null }
   const { t } = useTranslation();
   if (!notice) return null;
 
+  // The outcome of a refresh appears and disappears silently; role="status" is what makes
+  // "12 ingested" / "sync failed" reach a screen reader at all.
   if (notice === 'error' || notice.failed > 0) {
-    return <span className="truncate text-[11px] text-broken">{t('inbox.syncFailed')}</span>;
+    return (
+      <span role="status" className="truncate text-[11px] text-broken">
+        {t('inbox.syncFailed')}
+      </span>
+    );
   }
 
   const label = notice.alreadyRunning
@@ -253,7 +260,11 @@ function SyncNotice({ notice }: { readonly notice: SyncResult | 'error' | null }
       ? t('inbox.syncIngested', { count: notice.ingested })
       : t('inbox.syncNothingNew');
 
-  return <span className="truncate text-[11px] text-ink-fainter">{label}</span>;
+  return (
+    <span role="status" className="truncate text-[11px] text-ink-fainter">
+      {label}
+    </span>
+  );
 }
 
 /** A header chip. Clicking the active one clears the filter — the chip is its own toggle. */

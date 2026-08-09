@@ -27,17 +27,26 @@
   --color-line-dim: #232220;
   --color-line-faint: #1c1b1a;
 
-  /* text, brightest to faintest */
+  /*
+   * Text, brightest to faintest.
+   *
+   * The bottom of this scale is floored at WCAG AA. The mockup's original values ran down to
+   * #4a463f, which is 1.9:1 on the void — a recede so deep that the row summaries and the
+   * "cleared · undo" affordance were effectively unreadable rather than merely quiet. The five
+   * recede steps are all still distinct and still ordered; they just start from a legible floor
+   * (>= 4.6:1 on every surface token, including `raised` and the selected-row grey) instead of
+   * from invisibility. Quiet is a design goal here, unreadable never was.
+   */
   --color-ink-bright: #f2efe7;
   --color-ink-strong: #f0ede5;
   --color-ink: #e8e5dd;
   --color-ink-soft: #d6d2c8;
   --color-ink-muted: #b8b3a8;
-  --color-ink-dim: #9a968c;
-  --color-ink-dimmer: #8a857b;
-  --color-ink-faint: #6b6862;
-  --color-ink-fainter: #55534e;
-  --color-ink-ghost: #4a463f;
+  --color-ink-dim: #aba69b;
+  --color-ink-dimmer: #a5a095;
+  --color-ink-faint: #9b968b;
+  --color-ink-fainter: #928e84;
+  --color-ink-ghost: #88847a;
 
   /* the one accent */
   --color-amber: #e0a83c;
@@ -88,9 +97,11 @@
   }
 
   /* Focus has to stay clearly visible on a near-black surface — the amber accent doubles as the
-     focus colour rather than the browser default, which all but disappears here. */
+     focus colour rather than the browser default, which all but disappears here. Two pixels, not
+     one: WCAG 2.4.11 wants a 2px-equivalent perimeter, and against a panel whose own borders are
+     1px greys a 1px ring reads as just another divider. */
   :focus-visible {
-    outline: 1px solid var(--color-amber);
+    outline: 2px solid var(--color-amber);
     outline-offset: 1px;
   }
 

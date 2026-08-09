@@ -24,10 +24,17 @@ export function SearchScreen() {
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-12">
         <div className="flex w-full max-w-3xl flex-col gap-4.5">
+          {/* The screen is all box and no chrome, so it had no heading at all — a route with
+              nothing above <h2> is a hole in the document outline. The title is for the outline,
+              not the eye; the box itself is self-evident. */}
+          <h1 className="sr-only">{t('nav.search')}</h1>
           <label className="flex items-center gap-3 border border-amber-line bg-sunken px-4 py-3.5 focus-within:border-amber">
             <Search size={15} className="text-amber" aria-hidden />
             <input
               ref={search.inputRef}
+              // The wrapping <label> has no text of its own, so without this the field is
+              // announced with an empty name.
+              aria-label={t('search.placeholder')}
               // The box is the entire purpose of this route.
               // biome-ignore lint/a11y/noAutofocus: having to tab to it would be the surprise
               autoFocus
@@ -92,7 +99,9 @@ export function SearchScreen() {
             )}
 
             {search.results && !search.isFetching && (
-              <span className="ml-auto text-ink-fainter">
+              // Results replace themselves in place as you type; without a live region the count
+              // is the one piece of feedback a screen reader never gets.
+              <span role="status" className="ml-auto text-ink-fainter">
                 {t('search.results', { count: search.results.length })}
                 {search.elapsedMs !== undefined && ` · ${search.elapsedMs} ms`}
               </span>
