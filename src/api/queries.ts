@@ -68,6 +68,9 @@ export const queryKeys = {
  */
 const LIVE_REFETCH_MS = 30_000;
 
+/** While the backfill runs the overview doubles as its progress readout. */
+const BACKFILL_REFETCH_MS = 3_000;
+
 export function useTodayDigest() {
   return useQuery({
     queryKey: queryKeys.digestToday,
@@ -139,7 +142,10 @@ export function useCategoryOverview(days?: number) {
   return useQuery({
     queryKey: queryKeys.categories(days),
     queryFn: () => fetchCategoryOverview(days),
-    refetchInterval: LIVE_REFETCH_MS,
+    // Faster while a backfill is in flight: this read *is* the progress bar, and 30 seconds
+    // between updates on a run that visibly moves reads as a hang.
+    refetchInterval: (query) =>
+      query.state.data?.backfill.running ? BACKFILL_REFETCH_MS : LIVE_REFETCH_MS,
   });
 }
 
@@ -165,10 +171,13 @@ export function useDeleteCategory() {
 }
 
 /**
- * Categorises mail that predates the feature.
+ * Kicks off the backfill of mail that predates categories.
  *
- * No optimistic update and no retry: the run costs credit per message, so a retried mutation would
- * quietly spend twice. The result is reported back to the user verbatim instead.
+ * Returns as soon as the run has *started*, not when it finishes — the work is one classifier turn
+ * per message and used to hold the request open for minutes. Progress arrives through the overview
+ * poll instead.
+ *
+ * No retry: each message in a run costs credit, so an automatic retry would quietly spend twice.
  */
 export function useBackfillCategories() {
   const queryClient = useQueryClient();

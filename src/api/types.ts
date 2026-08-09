@@ -308,20 +308,21 @@ export interface CategoryOverview {
   readonly mix: CategoryMix;
   readonly unsure: readonly UnsureMessage[];
   readonly recentCorrections: readonly CategoryCorrection[];
+  readonly backfill: BackfillStatus;
 }
 
 /**
- * The outcome of one backfill run. `skipped` and `remaining` stay separate: skipped messages were
- * offered to the classifier and it had no answer, remaining ones were never reached — collapsing
- * them would make a second run look pointless when it is not.
+ * State of the backfill, not a result — the run is detached from the request that starts it, so
+ * there is nothing to report at the moment of asking. The screen polls and watches `uncategorised`
+ * fall.
  */
-export interface CategoryBackfill {
-  readonly candidates: number;
-  readonly categorisedByRule: number;
-  readonly categorisedByModel: number;
-  readonly skipped: number;
-  readonly remaining: number;
-  readonly stoppedBecause?: 'limit' | 'sidecar_unavailable';
+export interface BackfillStatus {
+  readonly running: boolean;
+  readonly processed: number;
+  /** How many this run intends to reach; 0 until the free rule pass has finished. */
+  readonly target: number;
+  readonly uncategorised: number;
+  readonly lastOutcome?: 'done' | 'more_remaining' | 'sidecar_unavailable' | 'failed';
 }
 
 export interface CreateCategoryRequest {
