@@ -61,6 +61,10 @@ export async function backfillCategories(limit?: number): Promise<BackfillStatus
   return data;
 }
 
+export async function deleteCategoryRule(ruleId: string): Promise<void> {
+  await api.delete(`/api/v1/categories/rules/${ruleId}`);
+}
+
 export async function assignCategory(request: AssignCategoryRequest): Promise<Category> {
   const { data } = await api.post<Category>('/api/v1/categories/assign', request);
   return data;

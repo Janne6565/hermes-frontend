@@ -5,6 +5,7 @@ import {
   useCategoryOverview,
   useCreateCategory,
   useDeleteCategory,
+  useDeleteCategoryRule,
   useRenameCategory,
 } from '@/api/queries';
 
@@ -31,10 +32,12 @@ export function useCategoriesLogic() {
   const create = useCreateCategory();
   const remove = useDeleteCategory();
   const rename = useRenameCategory();
+  const removeRule = useDeleteCategoryRule();
   const assign = useAssignCategory();
   const backfill = useBackfillCategories();
 
   const [creating, setCreating] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(CATEGORY_COLORS[4]);
 
@@ -89,6 +92,13 @@ export function useCategoriesLogic() {
         ? rename.variables?.id
         : undefined,
     renameTo: (id: string, name: string, color?: string) => rename.mutate({ id, name, color }),
+    // Resolved from the live list rather than held as a snapshot, so the dialog keeps updating
+    // while it is open — the backfill can be filing mail into this very category as you read it.
+    detail: categories.find((category) => category.id === detailId) ?? null,
+    openDetail: setDetailId,
+    closeDetail: () => setDetailId(null),
+    deletingRuleId: removeRule.isPending ? removeRule.variables : undefined,
+    removeRule: (ruleId: string) => removeRule.mutate(ruleId),
     deletingId: remove.isPending ? remove.variables : undefined,
     remove: (id: string) => remove.mutate(id),
     assigningId: assign.isPending ? assign.variables?.messageId : undefined,

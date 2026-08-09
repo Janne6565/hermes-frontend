@@ -264,8 +264,17 @@ export interface Category {
    * categories never decide priority.
    */
   readonly typicalPriority?: Priority;
-  readonly matchedBy: readonly string[];
+  readonly rules: readonly CategoryRule[];
   readonly corrected: number;
+}
+
+/** A pattern that files mail into a category. Carries no priority — that is the whole design. */
+export interface CategoryRule {
+  readonly id: string;
+  readonly type: RuleType;
+  readonly pattern: string;
+  readonly source: RuleSource;
+  readonly hits: number;
 }
 
 /** Counts, not percentages, so the screen's numbers and its lists cannot disagree. */
