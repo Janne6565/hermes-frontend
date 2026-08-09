@@ -6,6 +6,7 @@ import {
   createCategory,
   createRule,
   deleteCategory,
+  deleteCategoryRule,
   fetchCategoryOverview,
   renameCategory,
   dryRunRule,
@@ -174,6 +175,20 @@ export function useRenameCategory() {
       void queryClient.invalidateQueries({ queryKey: ['categories'] });
       void queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
+  });
+}
+
+/**
+ * Removes one pattern from a category.
+ *
+ * Only the categories query is invalidated: mail already filed by the rule keeps its category, so
+ * no message chip anywhere changes.
+ */
+export function useDeleteCategoryRule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId: string) => deleteCategoryRule(ruleId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['categories'] }),
   });
 }
 

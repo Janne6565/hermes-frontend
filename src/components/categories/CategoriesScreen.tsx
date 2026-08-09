@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Tags, Trash2, Wand2 } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Notice, SectionLabel, Spinner } from '@/components/ui';
@@ -6,6 +5,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { CategoryDetail } from './CategoryDetail';
 import { CATEGORY_COLORS, useCategoriesLogic } from './useCategoriesLogic';
 import type { Category, UnsureMessage } from '@/api/types';
 
@@ -170,9 +170,7 @@ export function CategoriesScreen() {
                     key={category.id}
                     category={category}
                     deleting={state.deletingId === category.id}
-                    renaming={state.renamingId === category.id}
-                    conflict={state.renameConflictId === category.id}
-                    onRename={(name, color) => state.renameTo(category.id, name, color)}
+                    onOpen={() => state.openDetail(category.id)}
                     onDelete={() => state.remove(category.id)}
                   />
                 ))}
@@ -252,6 +250,21 @@ export function CategoriesScreen() {
           )}
         </aside>
       </div>
+      {state.detail && (
+        <CategoryDetail
+          category={state.detail}
+          saving={state.renamingId === state.detail.id}
+          conflict={state.renameConflictId === state.detail.id}
+          deletingRuleId={state.deletingRuleId}
+          onSave={(name, color) => state.renameTo(state.detail?.id ?? '', name, color)}
+          onDeleteRule={state.removeRule}
+          onDelete={() => {
+            state.remove(state.detail?.id ?? '');
+            state.closeDetail();
+          }}
+          onClose={state.closeDetail}
+        />
+      )}
     </div>
   );
 }
@@ -259,79 +272,36 @@ export function CategoriesScreen() {
 function CategoryRow({
   category,
   deleting,
-  renaming,
-  conflict,
-  onRename,
+  onOpen,
   onDelete,
 }: {
   readonly category: Category;
   readonly deleting: boolean;
-  readonly renaming: boolean;
-  readonly conflict: boolean;
-  readonly onRename: (name: string, color?: string) => void;
+  readonly onOpen: () => void;
   readonly onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(category.name);
-  const [color, setColor] = useState(category.color);
-
-  const open = () => {
-    setDraft(category.name);
-    setColor(category.color);
-    setEditing(true);
-  };
-
   const matchedBy =
-    category.matchedBy.length > 0 ? category.matchedBy.join(', ') : t('categories.modelOnly');
-
-  const commit = () => {
-    const name = draft.trim();
-    // Nothing to send is not an error — closing an edit you did not make should just close it.
-    if (name.length > 0 && (name !== category.name || color !== category.color)) {
-      onRename(name, color);
-    }
-    setEditing(false);
-  };
+    category.rules.length > 0
+      ? category.rules.map((rule) => rule.pattern).join(', ')
+      : t('categories.modelOnly');
 
   return (
     <tr className="border-b border-line-faint text-[12px]">
       <td className="py-2.5">
-        {editing ? (
-          <span className="flex min-w-0 items-center gap-2">
-            <ColorDot color={color} />
-            <input
-              value={draft}
-              // biome-ignore lint/a11y/noAutofocus: the row turned into a form on the user's click
-              autoFocus
-              onChange={(event) => setDraft(event.target.value)}
-              onBlur={commit}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') commit();
-                // Escape abandons the edit rather than saving it — blur would otherwise commit.
-                if (event.key === 'Escape') setEditing(false);
-              }}
-              aria-label={t('categories.rename')}
-              className="min-w-0 flex-1 border border-amber-line bg-sunken px-1.5 py-0.5 text-[12px] text-ink outline-none"
-            />
-          </span>
-        ) : (
-          <span className="flex min-w-0 items-center gap-2.5">
-            <ColorDot color={category.color} />
-            <button
-              type="button"
-              onClick={open}
-              disabled={renaming}
-              title={t('categories.rename')}
-              className="truncate text-left text-ink hover:text-amber disabled:opacity-50"
-            >
-              {category.name}
-            </button>
-          </span>
-        )}
-        {conflict && (
-          <span className="mt-1 block text-[11px] text-broken">{t('categories.duplicate')}</span>
-        )}
+        <span className="flex min-w-0 items-center gap-2.5">
+          <ColorDot color={category.color} />
+          {/* The name is the way in. Inline renaming lived here before the detail dialog existed;
+              two editors for one field would only make it ambiguous which one saves. */}
+          <button
+            type="button"
+            onClick={onOpen}
+            title={t('categories.openDetail')}
+            className="truncate text-left text-ink hover:text-amber"
+          >
+            {category.name}
+          </button>
+        </span>
       </td>
       <td className="py-2.5">
         <span className="flex items-center gap-2.5">
@@ -370,7 +340,7 @@ function CategoryRow({
       <td className="py-2.5">
         {/* Built-ins are part of the classifier's vocabulary — deleting one would silently shrink
             what the model is allowed to answer, so there is no control to offer. Renaming them is
-            fine, and is why the name itself is the button rather than this cell. */}
+            fine, which is why the name opens the dialog for every row. */}
         {!category.builtin && (
           <button
             type="button"
