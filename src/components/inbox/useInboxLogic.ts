@@ -48,21 +48,72 @@ export function useInboxLogic() {
   const navigate = useNavigate({ from: '/' });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  /**
+   * Local state rather than a search param, unlike `view`.
+   *
+   * `view` is in the URL because the rail navigates to it. A category in the URL would break the
+   * rail's own highlight: it matches on the full search object, so `?view=high&category=Billing`
+   * would leave no row marked at all. The component stays mounted across a view change, so the
+   * filter survives switching tiers — which is the behaviour that actually matters — and is only
+   * lost on a real page change.
+   */
+  const [category, setCategory] = useState<string | null>(null);
   const [noiseExpanded, setNoiseExpanded] = useState(view === 'noise');
 
   const messages = useMemo(() => recent.data ?? [], [recent.data]);
 
+  /**
+   * What the current tier holds, before the category filter.
+   *
+   * This is what the category chips count, so each chip promises what clicking it will actually
+   * show — a "Billing 17" chip in the high tier that yields two rows would be a lie, and counting
+   * the filtered set instead would make every chip read 0 except the active one.
+   */
+  const inView = useMemo(() => {
+    if (view === undefined) return messages;
+    if (view === 'high') return messages.filter((m) => m.priority === 'high' && !m.dismissed);
+    if (view === 'dismissed') return messages.filter((m) => m.priority === 'high' && m.dismissed);
+    return messages.filter((m) => m.priority === view);
+  }, [messages, view]);
+
+  const categories = useMemo(() => {
+    const byName = new Map<string, { name: string; color: string; count: number }>();
+    for (const message of inView) {
+      if (!message.category) continue;
+      const existing = byName.get(message.category);
+      if (existing) existing.count += 1;
+      else
+        byName.set(message.category, {
+          name: message.category,
+          color: message.categoryColor ?? 'var(--color-line)',
+          count: 1,
+        });
+    }
+    return [...byName.values()].sort((first, second) => second.count - first.count);
+  }, [inView]);
+
+  // Derived from what is on screen rather than from the category list, so a filter can never be
+  // left pointing at something the current tier does not contain.
+  const activeCategory = categories.some((entry) => entry.name === category) ? category : null;
+
+  const visible = useMemo(
+    () =>
+      activeCategory ? messages.filter((message) => message.category === activeCategory) : messages,
+    [messages, activeCategory],
+  );
+
   const allHigh = useMemo(
-    () => messages.filter((message) => message.priority === 'high'),
-    [messages],
+    () => visible.filter((message) => message.priority === 'high'),
+    [visible],
   );
   const allNormal = useMemo(
-    () => messages.filter((message) => message.priority === 'normal'),
-    [messages],
+    () => visible.filter((message) => message.priority === 'normal'),
+    [visible],
   );
   const allNoise = useMemo(
-    () => messages.filter((message) => message.priority === 'noise'),
-    [messages],
+    () => visible.filter((message) => message.priority === 'noise'),
+    [visible],
   );
 
   const counts = useMemo(
@@ -254,6 +305,11 @@ export function useInboxLogic() {
     pollIntervalSeconds,
     view,
     setView,
+    categories,
+    activeCategory,
+    // Clicking the active chip clears it: a filter you can set but not unset is a trap, and a
+    // separate "clear" control for a single toggle is more chrome than the job needs.
+    toggleCategory: (name: string) => setCategory((current) => (current === name ? null : name)),
     showHigh,
     showNormal,
     showNoise,
