@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuery, removeToken, tokensOf } from './searchQuery';
+import { parseQuery, removeToken, searchExamples, tokensOf } from './searchQuery';
 
 describe('parseQuery', () => {
   it('splits tokens from free text', () => {
@@ -39,5 +39,23 @@ describe('parseQuery', () => {
     expect(removeToken(input, { key: 'priority', value: 'high' })).toBe(
       'from:uni-potsdam.de Abgabe',
     );
+  });
+});
+
+describe('searchExamples', () => {
+  // The suggestions are offered as valid syntax, so one the parser rejects would be the search box
+  // teaching a filter it then strikes through. `priority:medium` is the exact mistake this catches:
+  // plausible, but not one of high/normal/noise.
+  it('offers only filters the parser understands', () => {
+    for (const example of searchExamples(new Date('2026-08-09T12:00:00Z'))) {
+      const parsed = parseQuery(example);
+      expect(parsed.unknown, example).toEqual([]);
+      expect(parsed.text, example).toBeUndefined();
+      expect(tokensOf(parsed), example).toHaveLength(1);
+    }
+  });
+
+  it('dates the window example relative to the day it is asked for', () => {
+    expect(searchExamples(new Date('2026-08-09T12:00:00Z'))).toContain('after:2026-08-02');
   });
 });

@@ -179,6 +179,7 @@ const enCommon = {
     placeholder: 'from:uni-potsdam.de priority:high',
     results_one: '{{count}} result',
     results_other: '{{count}} results',
+    examples: 'Try',
     localNote: 'Searches the local index, not Gmail — works even when sync is down.',
     empty: 'No matches.',
     emptyHint: 'Try a broader query, or drop the priority filter.',
@@ -454,6 +455,7 @@ const deCommon: CommonSchema = {
     placeholder: 'from:uni-potsdam.de priority:high',
     results_one: '{{count}} Treffer',
     results_other: '{{count}} Treffer',
+    examples: 'Zum Beispiel',
     localNote:
       'Sucht im lokalen Index, nicht in Gmail — funktioniert auch, wenn der Sync ausfällt.',
     empty: 'Keine Treffer.',

@@ -59,6 +59,24 @@ export function SearchScreen() {
               </span>
             ))}
 
+            {/* Only while nothing is being searched: once there are chips this row is the state of
+                the query, and suggestions sitting among them would read as active filters. */}
+            {!search.hasCriteria && (
+              <>
+                <span className="text-ink-ghost">{t('search.examples')}</span>
+                {search.examples.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => search.applyExample(example)}
+                    className="border border-line px-2.5 py-1 text-ink-fainter transition-colors hover:border-amber-line hover:text-amber"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </>
+            )}
+
             {search.hasCriteria && (
               <button
                 type="button"

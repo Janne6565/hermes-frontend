@@ -1,6 +1,12 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useMessageSearch } from '@/api/queries';
-import { parseQuery, removeToken, tokensOf, type QueryToken } from '@/lib/searchQuery';
+import {
+  parseQuery,
+  removeToken,
+  searchExamples,
+  tokensOf,
+  type QueryToken,
+} from '@/lib/searchQuery';
 
 export function useSearchLogic() {
   const [query, setQuery] = useState('');
@@ -44,6 +50,26 @@ export function useSearchLogic() {
     }
   }, [search.isFetching]);
 
+  // Computed once per mount rather than per render: the date example must not shift underfoot
+  // between the click and the search it produces.
+  const examples = useMemo(() => searchExamples(new Date()), []);
+
+  /**
+   * Appends an example instead of replacing the box.
+   *
+   * The filters combine — `priority:high classified_by:fallback` is a real question — so clicking a
+   * second one has to narrow the search rather than throw the first one away. Focus goes back to
+   * the input because the click is usually the start of typing, not the end of it.
+   */
+  const applyExample = useCallback((example: string) => {
+    setQuery((current) => {
+      const words = current.trim().split(/\s+/).filter(Boolean);
+      if (words.includes(example)) return current;
+      return [...words, example].join(' ');
+    });
+    inputRef.current?.focus();
+  }, []);
+
   // ⌘K / Ctrl-K focuses the box from anywhere on the screen; esc clears it.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -68,6 +94,8 @@ export function useSearchLogic() {
     tokens: tokensOf(parsed),
     unknown: parsed.unknown,
     hasCriteria,
+    examples,
+    applyExample,
     results: search.data,
     isFetching: search.isFetching,
     elapsedMs,

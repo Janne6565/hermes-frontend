@@ -1,3 +1,4 @@
+import { toIsoDate } from '@/lib/format';
 import type { ClassifiedBy, Priority } from '@/api/types';
 
 /**
@@ -29,6 +30,31 @@ export interface QueryToken {
 const PRIORITIES = new Set<string>(['high', 'normal', 'noise']);
 const CLASSIFIERS = new Set<string>(['rule', 'llm', 'fallback']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** How far back the date example reaches. A week is the window the digest stats already use. */
+const EXAMPLE_WINDOW_DAYS = 7;
+
+/**
+ * One-click starting points for an empty search box.
+ *
+ * They live next to the parser rather than in the screen so the two cannot drift: a suggestion the
+ * parser does not understand would render as a struck-through unknown chip, which is the search
+ * box teaching a syntax it then rejects. The test holds that line.
+ *
+ * The literal query text is the label on purpose — an empty box gives no hint that `key:value`
+ * filters exist, so clicking one both runs the search and shows how to write the next.
+ */
+export function searchExamples(now: Date): string[] {
+  const since = new Date(now.getTime() - EXAMPLE_WINDOW_DAYS * 86_400_000);
+  return [
+    'priority:high',
+    'priority:normal',
+    'priority:noise',
+    'classified_by:fallback',
+    'classified_by:llm',
+    `after:${toIsoDate(since)}`,
+  ];
+}
 
 export function parseQuery(input: string): ParsedQuery {
   const words = input.trim().split(/\s+/).filter(Boolean);
