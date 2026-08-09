@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusDot } from '@/components/ui';
 import { HermesLockup } from '@/components/ui/HermesMark';
+import { signOut } from '@/lib/auth';
 import { useNavRailLogic } from './useNavRailLogic';
 import type { InboxSearch } from '@/routes/index';
 
@@ -80,6 +82,16 @@ export function NavRail() {
       </div>
 
       <div className="mt-auto flex flex-col gap-1.5 border-t border-line-dim px-4.5 pt-4">
+        {/* Not a RailLink: this leaves the SPA entirely, so it must be a real navigation rather
+            than a router link that would resolve to a 404 route. */}
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex items-center gap-2 self-start py-1 text-[11.5px] text-ink-faint transition-colors hover:text-ink"
+        >
+          <LogOut size={12} aria-hidden />
+          {t('nav.signOut')}
+        </button>
         <div className="text-[10px] tracking-wider text-ink-fainter">
           {t('nav.lastSync')} {lastSync}
         </div>
