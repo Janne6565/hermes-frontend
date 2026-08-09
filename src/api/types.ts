@@ -105,6 +105,11 @@ export interface NoiseSummary {
 export interface Digest {
   readonly date: string;
   readonly counts: DigestCounts;
+  /**
+   * A few sentences of prose about the day, written once when the digest is sent. Absent until
+   * then, and whenever the narrator was unavailable — the lists below are always the truth.
+   */
+  readonly narrative?: string;
   readonly high: readonly Message[];
   readonly normal: readonly Message[];
   readonly noise: NoiseSummary;

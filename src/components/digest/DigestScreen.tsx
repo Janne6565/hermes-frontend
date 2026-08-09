@@ -74,6 +74,25 @@ export function DigestScreen() {
               <Notice label={t('digest.degraded')}>{data.degradedReason}</Notice>
             )}
 
+            {/* The same paragraph that went to the phone, not a second rendering of it — so the
+                app and the notification can never disagree about what the day was. */}
+            {(data.narrative || digest.isToday) && (
+              <section className="flex flex-col gap-2">
+                <SectionLabel>{t('digest.narrativeHeading')}</SectionLabel>
+                {data.narrative ? (
+                  <p className="max-w-[62ch] font-sans text-[14.5px] leading-[1.65] text-ink-soft">
+                    {data.narrative}
+                  </p>
+                ) : (
+                  // Only offered for today. A past day that has no narrative never gets one, and
+                  // promising a text that will not arrive is worse than showing nothing.
+                  <p className="font-sans text-[13px] text-ink-ghost italic">
+                    {t('digest.narrativePending')}
+                  </p>
+                )}
+              </section>
+            )}
+
             {data.high.length > 0 && (
               <section className="flex flex-col">
                 <div className="flex items-baseline gap-2.5 pb-2.5">
