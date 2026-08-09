@@ -3,7 +3,7 @@
 The operator console for [Hermes](https://github.com/Janne6565/hermes-backend). React 19 + Vite +
 Bun, TanStack Router/Query, Tailwind 4.
 
-Implements the *Mail Triage UI* design: a near-monochrome instrument where priority is carried by
+Implements the *Hermes UI* design: a near-monochrome instrument where priority is carried by
 weight and one amber accent, never by a rainbow of labels — and **red is reserved exclusively for
 a broken system**. If something is red on this screen, mail is not being read. That rule is
 encoded in `src/index.css`: `--color-broken` is the only red token, and nothing in the priority
@@ -43,14 +43,18 @@ and the address.
 
 Read-only scope. Hermes can never send, delete or modify mail.
 
-## The access token
+## Access
 
-Hermes reads your mail, so the API is not public. On first load the app asks for the admin token
-from the `hermes-app-key` secret and keeps it in `localStorage`; it is sent as `X-Hermes-Token`.
-A 401 clears it and returns you to the unlock screen.
+There is no login screen, and the app holds no credential at all. Hermes reads your mail, so
+`hermes.jannekeipert.de` sits behind an Authentik forward-auth middleware on the Traefik ingress:
+an unauthenticated browser is redirected to `sso.jannekeipert.de` and never reaches this bundle.
+Membership in the `hermes-users` group is the gate.
 
-This is deliberately the smallest thing that closes the hole. Putting the app behind Authentik
-like the other house apps is the better long-term answer.
+A 401 therefore only means the session lapsed while the tab sat open — the axios interceptor
+reloads the page, which hits the ingress and comes back through SSO.
+
+Locally there is no ingress and no gate; `bun dev` proxies `/api` straight to a backend that runs
+without an admin token set.
 
 ## Conventions
 
