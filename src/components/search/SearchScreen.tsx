@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, SearchX, X } from 'lucide-react';
 import { EmptyState, PriorityBadge, Spinner } from '@/components/ui';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatDate } from '@/lib/format';
+import { MessageDialog } from '@/components/messages/MessageDialog';
 import { useSearchLogic } from './useSearchLogic';
+import type { Message } from '@/api/types';
 
 /**
  * Screen 06.
@@ -12,6 +15,7 @@ import { useSearchLogic } from './useSearchLogic';
  * sync is down — which is exactly when you most want to look something up.
  */
 export function SearchScreen() {
+  const [opened, setOpened] = useState<Message | null>(null);
   const { t } = useTranslation();
   const { locale } = useLanguage();
   const search = useSearchLogic();
@@ -108,12 +112,15 @@ export function SearchScreen() {
 
             {!search.isFetching &&
               search.results?.map((message) => (
-                <a
+                // Opens the detail dialog rather than jumping straight to Gmail. A search result
+                // is usually a question about the triage — why is this noise, who sent it — and
+                // leaving the app to answer it loses the result set. Gmail is still one click
+                // away inside the dialog.
+                <button
                   key={message.id}
-                  href={message.gmailUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="flex gap-4.5 border-t border-line-dim py-4 hover:bg-[#171614]"
+                  type="button"
+                  onClick={() => setOpened(message)}
+                  className="flex gap-4.5 border-t border-line-dim py-4 text-left hover:bg-[#171614]"
                 >
                   <div className="flex w-24 flex-none flex-col gap-1">
                     <span className="text-[11.5px] text-ink-dimmer">
@@ -130,7 +137,7 @@ export function SearchScreen() {
                       </span>
                     )}
                   </div>
-                </a>
+                </button>
               ))}
           </div>
         </div>
@@ -140,6 +147,10 @@ export function SearchScreen() {
         <span>{t('search.localNote')}</span>
         <span className="ml-auto">{t('search.shortcuts')}</span>
       </div>
+
+      {opened && (
+        <MessageDialog messageId={opened.id} fallback={opened} onClose={() => setOpened(null)} />
+      )}
     </div>
   );
 }

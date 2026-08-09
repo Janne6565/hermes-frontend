@@ -239,6 +239,10 @@ const enCommon = {
   },
   search: {
     title: 'Search',
+    messageDetail: 'Message',
+    paletteHint: '↑↓ select · enter open · esc close',
+    paletteIdle:
+      'Search everything Hermes has read. Filters work here too — priority:high, category:Billing, from:…',
     placeholder: 'from:uni-potsdam.de priority:high',
     results_one: '{{count}} result',
     results_other: '{{count}} results',
@@ -581,6 +585,10 @@ const deCommon: CommonSchema = {
   },
   search: {
     title: 'Suche',
+    messageDetail: 'Nachricht',
+    paletteHint: '↑↓ wählen · Enter öffnen · Esc schließen',
+    paletteIdle:
+      'Durchsucht alles, was Hermes gelesen hat. Filter gehen auch hier — priority:high, category:Billing, from:…',
     placeholder: 'from:uni-potsdam.de priority:high',
     results_one: '{{count}} Treffer',
     results_other: '{{count}} Treffer',

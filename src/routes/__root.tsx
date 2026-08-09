@@ -2,6 +2,7 @@ import { Outlet, createRootRoute } from '@tanstack/react-router';
 import { NavRail } from '@/components/layout/NavRail';
 import { MobileTabBar } from '@/components/layout/MobileTabBar';
 import { UnlockGate } from '@/components/layout/UnlockGate';
+import { CommandPalette } from '@/components/search/CommandPalette';
 
 export const Route = createRootRoute({ component: RootLayout });
 
@@ -17,6 +18,9 @@ function RootLayout() {
           <MobileTabBar />
         </div>
       </div>
+      {/* Inside the gate, so the shortcut cannot open a search box over a locked app; outside the
+          <main>, because it belongs to the application rather than to any one route. */}
+      <CommandPalette />
     </UnlockGate>
   );
 }
