@@ -304,7 +304,14 @@ function CategoryRow({
             type="button"
             onClick={onOpen}
             title={t('categories.openDetail')}
-            className="truncate text-left text-ink hover:text-amber"
+            // 12px text leaves an 18px box, so the only way into the detail dialog was a target
+            // under the 24px floor (WCAG 2.5.8). The padding grows the target and the matching
+            // negative margin gives the height straight back to the row, which is already 39px
+            // tall — the fix is invisible and the row does not move.
+            // Deliberately inline-block, not inline-flex: `truncate` puts the ellipsis on this
+            // box's own text, and a flex container would hand the text to an anonymous item where
+            // text-overflow no longer applies. "Uncategorised" needs that ellipsis.
+            className="-my-1 inline-block min-h-6 truncate py-1 text-left text-ink hover:text-amber"
           >
             {category.name}
           </button>
