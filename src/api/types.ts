@@ -120,6 +120,28 @@ export interface Digest {
   readonly sentAt?: string;
 }
 
+/**
+ * A digest over a chosen span, built on demand.
+ *
+ * Deliberately not a `Digest` with two dates: this one was never sent, so it has no `sentAt` and no
+ * stored history behind it. Anything rendering a delivery state must not be handed one of these.
+ */
+export interface DigestRange {
+  readonly from: string;
+  readonly to: string;
+  /** Days covered, both ends included. */
+  readonly days: number;
+  readonly counts: DigestCounts;
+  readonly narrative?: string;
+  readonly high: readonly Message[];
+  readonly normal: readonly Message[];
+  readonly noise: NoiseSummary;
+  readonly alerts: readonly AlertEvent[];
+  readonly unclassified: number;
+  readonly degraded: boolean;
+  readonly degradedReason?: string;
+}
+
 export interface DigestStatsDay {
   readonly date: string;
   readonly high: number;

@@ -10,6 +10,7 @@ import {
   fetchCategoryOverview,
   renameCategory,
   dryRunRule,
+  fetchDigestRange,
   fetchDigestStats,
   fetchRecentFeedback,
   deleteRule,
@@ -49,6 +50,7 @@ export const queryKeys = {
   digestToday: ['digest', 'today'] as const,
   digest: (date: string) => ['digest', date] as const,
   digestStats: (days: number) => ['digest', 'stats', days] as const,
+  digestRange: (from: string, to: string) => ['digest', 'range', from, to] as const,
   recentFeedback: ['rules', 'feedback'] as const,
   ruleDryRun: (type: string, pattern: string) => ['rules', 'dry-run', type, pattern] as const,
   openHigh: ['messages', 'high', 'open'] as const,
@@ -85,6 +87,23 @@ export function useTodayDigest() {
 
 export function useDigest(date: string) {
   return useQuery({ queryKey: queryKeys.digest(date), queryFn: () => fetchDigest(date) });
+}
+
+/**
+ * The ad-hoc range report.
+ *
+ * Disabled until a span is actually submitted: the request costs an LLM call, so it must never be
+ * fired by someone half-way through picking dates. Cached under the span, so flipping back to a
+ * range you already built is instant and does not narrate it a second time.
+ */
+export function useDigestRange(range: { readonly from: string; readonly to: string } | undefined) {
+  return useQuery({
+    queryKey: queryKeys.digestRange(range?.from ?? '', range?.to ?? ''),
+    queryFn: () => fetchDigestRange(range?.from ?? '', range?.to ?? ''),
+    enabled: Boolean(range),
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: false,
+  });
 }
 
 export function useDigestStats(days = 7) {

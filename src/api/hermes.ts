@@ -12,6 +12,7 @@ import type {
   CreateRuleRequest,
   UpdateCategoryRequest,
   Digest,
+  DigestRange,
   DigestStats,
   FeedbackRequest,
   GoogleAccount,
@@ -86,6 +87,15 @@ export async function sendDigestNow(): Promise<Digest> {
 
 export async function fetchDigest(date: string): Promise<Digest> {
   const { data } = await api.get<Digest>(`/api/v1/digest/${date}`);
+  return data;
+}
+
+/**
+ * Builds an ad-hoc digest over a span. Slow for the same reason as the send — it narrates — and
+ * nothing about it is stored, so it is safe to re-run.
+ */
+export async function fetchDigestRange(from: string, to: string): Promise<DigestRange> {
+  const { data } = await api.get<DigestRange>('/api/v1/digest/range', { params: { from, to } });
   return data;
 }
 
