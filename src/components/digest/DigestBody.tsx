@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Notice, SectionLabel, Stat } from '@/components/ui';
+import { MessageDialog } from '@/components/messages/MessageDialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatTime } from '@/lib/format';
 import type { DigestCounts, Message, NoiseSummary } from '@/api/types';
@@ -43,6 +44,7 @@ export function DigestBody({
 }: DigestBodyProps) {
   const { t } = useTranslation();
   const { locale } = useLanguage();
+  const [opened, setOpened] = useState<Message | null>(null);
 
   return (
     <>
@@ -83,8 +85,17 @@ export function DigestBody({
               })}
             </span>
           </div>
+          {/* The row opens the detail dialog rather than jumping straight to Gmail, for the same
+              reason the search results do: the question a digest raises is about the triage — why
+              was this high, who sent it — and leaving the app to answer it loses the digest. The
+              Gmail link is still there, one level in, alongside the dismiss actions. */}
           {high.map((message) => (
-            <article key={message.id} className="flex gap-4 border-t border-line-dim py-3.5">
+            <button
+              key={message.id}
+              type="button"
+              onClick={() => setOpened(message)}
+              className="flex gap-4 border-t border-line-dim py-3.5 text-left hover:bg-[#171614]"
+            >
               <span className="w-11 flex-none pt-0.5 text-[11px] text-ink-fainter">
                 {showDates
                   ? formatDayAndTime(message.receivedAt, locale)
@@ -99,15 +110,7 @@ export function DigestBody({
                   <span className="text-[11.5px] text-ink-dimmer italic">{message.reason}</span>
                 )}
               </div>
-              <a
-                href={message.gmailUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="flex-none self-center text-[11px] text-ink-ghost hover:text-amber"
-              >
-                open
-              </a>
-            </article>
+            </button>
           ))}
         </section>
       )}
@@ -116,9 +119,11 @@ export function DigestBody({
         <section className="flex flex-col">
           <SectionLabel className="pb-2.5">{t('digest.normalHeading')}</SectionLabel>
           {normal.map((message) => (
-            <div
+            <button
               key={message.id}
-              className="flex items-baseline gap-4 border-t border-line-faint py-1.5"
+              type="button"
+              onClick={() => setOpened(message)}
+              className="flex w-full items-baseline gap-4 border-t border-line-faint py-1.5 text-left hover:bg-[#171614]"
             >
               <span className="w-11 flex-none text-[11px] text-ink-ghost">
                 {showDates
@@ -131,7 +136,7 @@ export function DigestBody({
               <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-ink-dimmer">
                 {message.summary ?? message.subject}
               </span>
-            </div>
+            </button>
           ))}
         </section>
       )}
@@ -145,6 +150,14 @@ export function DigestBody({
             {noise.categories.map((category) => `${category.count} ${category.label}`).join(' · ')}
           </span>
         </div>
+      )}
+
+      {/* Lives here rather than in each screen so the day digest and the range report cannot end
+          up with different behaviour for the same row. `fallback` is the row the user just
+          clicked: the mail is already on screen, so there is no reason to flash a spinner over it
+          while the canonical fetch confirms the dismiss state. */}
+      {opened && (
+        <MessageDialog messageId={opened.id} fallback={opened} onClose={() => setOpened(null)} />
       )}
     </>
   );
