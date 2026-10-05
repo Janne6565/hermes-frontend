@@ -25,6 +25,7 @@ export function NavRail() {
     historyId,
     alertCount,
     ruleCount,
+    automationCount,
     categoryCount,
   } = useNavRailLogic();
 
@@ -76,6 +77,7 @@ export function NavRail() {
       <div className="label-caps px-4.5 pt-5 pb-2 text-ink-fainter">{t('nav.system')}</div>
       <div className="flex flex-col">
         <RailLink to="/rules" label={t('nav.rules')} value={ruleCount} indent />
+        <RailLink to="/automations" label={t('nav.automations')} value={automationCount} indent />
         <RailLink to="/health" label={t('nav.health')} indent dot={health} />
         <RailLink to="/alerts" label={t('nav.alerts')} value={alertCount} accent indent />
         <RailLink to="/settings" label={t('nav.settings')} indent />

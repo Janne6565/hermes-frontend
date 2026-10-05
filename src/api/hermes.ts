@@ -3,13 +3,18 @@ import type {
   AlertEvent,
   AlertOverview,
   AssignCategoryRequest,
+  Automation,
+  AutomationOverview,
+  AutomationRun,
   BackfillStatus,
   Category,
   CategoryOverview,
   ClassifiedBy,
   Config,
+  CreateAutomationRequest,
   CreateCategoryRequest,
   CreateRuleRequest,
+  UpdateAutomationRequest,
   UpdateCategoryRequest,
   Digest,
   DigestRange,
@@ -68,6 +73,34 @@ export async function deleteCategoryRule(ruleId: string): Promise<void> {
 
 export async function assignCategory(request: AssignCategoryRequest): Promise<Category> {
   const { data } = await api.post<Category>('/api/v1/categories/assign', request);
+  return data;
+}
+
+export async function fetchAutomations(): Promise<AutomationOverview> {
+  const { data } = await api.get<AutomationOverview>('/api/v1/automations');
+  return data;
+}
+
+export async function createAutomation(request: CreateAutomationRequest): Promise<Automation> {
+  const { data } = await api.post<Automation>('/api/v1/automations', request);
+  return data;
+}
+
+export async function updateAutomation(
+  id: string,
+  request: UpdateAutomationRequest,
+): Promise<Automation> {
+  const { data } = await api.patch<Automation>(`/api/v1/automations/${id}`, request);
+  return data;
+}
+
+export async function deleteAutomation(id: string): Promise<void> {
+  await api.delete(`/api/v1/automations/${id}`);
+}
+
+/** Runs the actions once against a placeholder — bypasses shadow mode and quiet hours. */
+export async function testAutomation(id: string): Promise<AutomationRun> {
+  const { data } = await api.post<AutomationRun>(`/api/v1/automations/${id}/test`);
   return data;
 }
 

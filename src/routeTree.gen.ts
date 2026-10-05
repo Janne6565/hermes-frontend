@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as DigestRouteImport } from './routes/digest'
 import { Route as HealthRouteImport } from './routes/health'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const AlertsRoute = AlertsRouteImport.update({
   id: '/alerts',
   path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutomationsRoute = AutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoriesRoute = CategoriesRouteImport.update({
@@ -74,6 +80,7 @@ const MessageIdRoute = MessageIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/automations': typeof AutomationsRoute
   '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/automations': typeof AutomationsRoute
   '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
+  '/automations': typeof AutomationsRoute
   '/categories': typeof CategoriesRoute
   '/digest': typeof DigestRoute
   '/health': typeof HealthRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/alerts'
+    | '/automations'
     | '/categories'
     | '/digest'
     | '/health'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alerts'
+    | '/automations'
     | '/categories'
     | '/digest'
     | '/health'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/alerts'
+    | '/automations'
     | '/categories'
     | '/digest'
     | '/health'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertsRoute: typeof AlertsRoute
+  AutomationsRoute: typeof AutomationsRoute
   CategoriesRoute: typeof CategoriesRoute
   DigestRoute: typeof DigestRoute
   HealthRoute: typeof HealthRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/alerts'
       fullPath: '/alerts'
       preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/automations': {
+      id: '/automations'
+      path: '/automations'
+      fullPath: '/automations'
+      preLoaderRoute: typeof AutomationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/categories': {
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRoute,
+  AutomationsRoute: AutomationsRoute,
   CategoriesRoute: CategoriesRoute,
   DigestRoute: DigestRoute,
   HealthRoute: HealthRoute,

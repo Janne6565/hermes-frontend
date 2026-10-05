@@ -18,6 +18,7 @@ scale uses it.
 | `/digest` | The day, grouped by priority, with the delivery and degradation panel |
 | `/alerts` | Grafana / SigNoz alerts, grouped by the app that paged |
 | `/rules` | The rule table and the new-rule form |
+| `/automations` | Natural-language triggers ("any mail from Amazon") that push — direct or important — or call a webhook, plus their recent runs |
 | `/health` | Per-service state and the classification mix |
 | `/search` | Local-index search with `key:value` filters — works while sync is down |
 | `/settings` | Google account, a test push, and a read-only mirror of the server config |

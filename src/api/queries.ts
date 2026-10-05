@@ -3,8 +3,13 @@ import {
   acknowledgeAlert,
   assignCategory,
   backfillCategories,
+  createAutomation,
   createCategory,
   createRule,
+  deleteAutomation,
+  fetchAutomations,
+  testAutomation,
+  updateAutomation,
   deleteCategory,
   deleteCategoryRule,
   fetchCategoryOverview,
@@ -38,6 +43,8 @@ import {
 } from './hermes';
 import type {
   AssignCategoryRequest,
+  CreateAutomationRequest,
+  UpdateAutomationRequest,
   CreateCategoryRequest,
   UpdateCategoryRequest,
   CreateRuleRequest,
@@ -58,6 +65,7 @@ export const queryKeys = {
   messages: (params: MessageSearchParams) => ['messages', params] as const,
   rules: ['rules'] as const,
   categories: (days: number | undefined) => ['categories', days ?? 'default'] as const,
+  automations: ['automations'] as const,
   alerts: ['alerts'] as const,
   alertOverview: (days: number) => ['alerts', 'overview', days] as const,
   health: ['health'] as const,
@@ -440,5 +448,43 @@ export function useDisconnectGoogle() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.googleAccount });
       void queryClient.invalidateQueries({ queryKey: queryKeys.health });
     },
+  });
+}
+
+export function useAutomations() {
+  return useQuery({ queryKey: queryKeys.automations, queryFn: fetchAutomations });
+}
+
+export function useCreateAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: CreateAutomationRequest) => createAutomation(request),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.automations }),
+  });
+}
+
+export function useUpdateAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...request }: UpdateAutomationRequest & { id: string }) =>
+      updateAutomation(id, request),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.automations }),
+  });
+}
+
+export function useDeleteAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteAutomation(id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.automations }),
+  });
+}
+
+/** The run it returns also lands in the runs list, so the list is refreshed rather than patched. */
+export function useTestAutomation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => testAutomation(id),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.automations }),
   });
 }

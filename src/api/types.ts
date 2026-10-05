@@ -391,3 +391,64 @@ export interface FeedbackRequest {
   readonly shouldHaveBeen: Priority;
   readonly applyToDomain: boolean;
 }
+
+/**
+ * What an automation pushes. `direct` is a push now, held during quiet hours; `important` is an
+ * urgent push that overrides Do Not Disturb and pierces quiet hours. Neither touches priority.
+ */
+export type AutomationAlert = 'none' | 'direct' | 'important';
+
+/** What one action of one run actually did. */
+export type ActionOutcome = 'delivered' | 'failed' | 'suppressed' | 'none';
+
+/** A natural-language trigger the classifier judges, and the actions it runs on a match. */
+export interface Automation {
+  readonly id: string;
+  readonly name: string;
+  readonly trigger: string;
+  readonly alert: AutomationAlert;
+  readonly webhookUrl?: string;
+  readonly enabled: boolean;
+  readonly fireCount: number;
+  readonly lastFiredAt?: string;
+  readonly createdAt: string;
+}
+
+/** One firing. A test run has no message. */
+export interface AutomationRun {
+  readonly id: string;
+  readonly automationId: string;
+  readonly automationName: string;
+  readonly messageId?: string;
+  readonly sender?: string;
+  readonly subject?: string;
+  readonly firedAt: string;
+  readonly alert: ActionOutcome;
+  readonly webhook: ActionOutcome;
+  /** Why something failed or was held back, e.g. "webhook: HTTP 502; push held: quiet hours". */
+  readonly detail?: string;
+}
+
+export interface AutomationOverview {
+  readonly automations: readonly Automation[];
+  readonly recentRuns: readonly AutomationRun[];
+  /** Enabled automations allowed at once — every trigger is prompt text on every mail. */
+  readonly limit: number;
+}
+
+export interface CreateAutomationRequest {
+  readonly name: string;
+  readonly trigger: string;
+  readonly alert: AutomationAlert;
+  /** Empty means no webhook. */
+  readonly webhookUrl: string;
+}
+
+/** Omitted fields are left alone; an empty `webhookUrl` removes the webhook. */
+export interface UpdateAutomationRequest {
+  readonly name?: string;
+  readonly trigger?: string;
+  readonly alert?: AutomationAlert;
+  readonly webhookUrl?: string;
+  readonly enabled?: boolean;
+}

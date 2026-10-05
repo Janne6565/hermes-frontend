@@ -1,4 +1,5 @@
 import {
+  useAutomations,
   useMessageSearch,
   useHealth,
   useAlerts,
@@ -24,6 +25,7 @@ export function useNavRailLogic() {
   const health = useHealth();
   const alerts = useAlerts();
   const rules = useRules();
+  const automations = useAutomations();
   const categories = useCategoryOverview();
 
   const messages = recent.data ?? [];
@@ -48,6 +50,8 @@ export function useNavRailLogic() {
     historyId: health.data?.historyId,
     alertCount: alerts.data?.length ?? 0,
     ruleCount: rules.data?.filter((rule) => rule.enabled).length ?? 0,
+    automationCount:
+      automations.data?.automations.filter((automation) => automation.enabled).length ?? 0,
     categoryCount: categories.data?.categories.length ?? 0,
   };
 }
